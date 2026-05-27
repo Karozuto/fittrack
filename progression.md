@@ -48,12 +48,38 @@
   - États vides gérés
 - ✅ `components/Navbar.jsx` — barre de navigation avec logo + email + déconnexion
 
+### Workouts (`src/`)
+- ✅ `pages/WorkoutsPage.jsx` — page de suivi des séances d'entraînement
+  - Liste des séances avec filtrage par date
+  - Création de nouvelles séances avec exercices
+  - Suppression de séances
+  - Affichage des séries et poids pour chaque exercice
+
+### Nutrition (`src/`)
+- ✅ `pages/NutritionPage.jsx` — page de suivi nutritionnel complet
+  - Sélecteur de date avec calendrier et indicateurs visuels
+  - Résumé quotidien des macros (calories, protéines, glucides, lipides)
+- ✅ `components/DateSelector.jsx` — sélecteur de date avec calendrier interactif
+- ✅ `components/MealSection.jsx` — affichage des repas groupés par type
+- ✅ `components/CreateMealModal.jsx` — modal avec 3 méthodes d'ajout:
+  - Recherche: Recherche dans OpenFoodFacts avec bouton
+  - Code-barre: Entrée manuelle du code-barre
+  - Manuel: Saisie directe des macros avec sélecteur d'unité (g/ml)
+- ✅ Intégration OpenFoodFacts France (https://fr.openfoodfacts.org)
+- ✅ Calcul automatique des macros selon la quantité
+- ✅ Suppression de repas avec auto-nettoyage
+
 ---
 
-## 🔜 Pages restantes à créer
+## ✅ Projet complet
 
-- **C — Page Workouts** `/workouts` — créer et consulter ses séances
-- **D — Page Nutrition** `/nutrition` — ajouter et suivre ses repas
+Toutes les fonctionnalités principales ont été implémentées:
+- ✅ Authentification (Supabase Auth + Google OAuth)
+- ✅ Dashboard avec métriques et données temps réel
+- ✅ Page Workouts (CRUD complet)
+- ✅ Page Nutrition (suivi complet avec recherche OpenFoodFacts)
+- ✅ Base de données bien structurée avec RLS
+- ✅ UI/UX cohérente avec design system
 
 ---
 

@@ -6,8 +6,8 @@ Application web de suivi sportif et nutritionnel, construite avec React et Supab
 
 - **Authentification** — inscription et connexion via Supabase Auth
 - **Dashboard** — vue d'ensemble hebdomadaire (séances, séries, calories, protéines)
-- **Workouts** — création, consultation et suppression de séances d'entraînement
-- **Nutrition** _(à venir)_ — suivi des repas et des apports caloriques
+- **Workouts** — création, consultation et suppression de séances d'entraînement avec exercices et séries
+- **Nutrition** — suivi complet des repas avec recherche OpenFoodFacts, code-barre, et saisie manuelle des macros
 
 ## Stack technique
 
