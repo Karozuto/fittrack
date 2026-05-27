@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import WorkoutsPage from './pages/WorkoutsPage'
+import NutritionPage from './pages/NutritionPage'
 
 export default function App() {
   return (
@@ -30,8 +31,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {/* Route à venir */}
-          <Route path="/nutrition" element={<Navigate to="/" replace />} />
+          <Route
+            path="/nutrition"
+            element={
+              <ProtectedRoute>
+                <Navbar />
+                <NutritionPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

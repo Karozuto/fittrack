@@ -1,21 +1,22 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import ExerciseSelector from './ExerciseSelector'
 
 const TYPE_LABELS = {
   polyarticulaire: 'Polyarticulaire',
-  isolation:       'Isolation',
-  cardio:          'Cardio',
-  gainage:         'Gainage',
-  mobilité:        'Mobilité',
+  isolation: 'Isolation',
+  cardio: 'Cardio',
+  gainage: 'Gainage',
+  mobilité: 'Mobilité',
 }
 
 const TYPE_COLORS = {
   polyarticulaire: { bg: '#A8FF3E18', text: '#A8FF3E' },
-  isolation:       { bg: '#3EE0FF18', text: '#3EE0FF' },
-  cardio:          { bg: '#FF9B3E18', text: '#FF9B3E' },
-  gainage:         { bg: '#C03EFF18', text: '#C03EFF' },
-  mobilité:        { bg: '#FFD93E18', text: '#FFD93E' },
+  isolation: { bg: '#3EE0FF18', text: '#3EE0FF' },
+  cardio: { bg: '#FF9B3E18', text: '#FF9B3E' },
+  gainage: { bg: '#C03EFF18', text: '#C03EFF' },
+  mobilité: { bg: '#FFD93E18', text: '#FFD93E' },
 }
 
 function TypeBadge({ type }) {
@@ -54,95 +55,6 @@ function MuscleTags({ muscles }) {
           border: '1px solid #252924',
         }}>{m}</span>
       ))}
-    </div>
-  )
-}
-
-function ExerciseSearch({ exercises, value, onChange, index }) {
-  const [query, setQuery] = useState(value?.name || '')
-  const [open, setOpen] = useState(false)
-  const [filtered, setFiltered] = useState([])
-  const ref = useRef(null)
-
-  useEffect(() => {
-    if (!value) setQuery('')
-  }, [value])
-
-  useEffect(() => {
-    if (query.length < 1) { setFiltered([]); return }
-    const q = query.toLowerCase()
-    setFiltered(exercises.filter(e =>
-      e.name.toLowerCase().includes(q) ||
-      (e.muscle_groups || []).some(m => m.toLowerCase().includes(q))
-    ).slice(0, 10))
-  }, [query, exercises])
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
-  function select(ex) {
-    setQuery(ex.name)
-    setOpen(false)
-    onChange(ex)
-  }
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <input
-        style={{
-          width: '100%',
-          background: '#0D0F0E',
-          border: '1px solid #252924',
-          borderRadius: '6px',
-          padding: '9px 14px',
-          color: '#F0F0EE',
-          fontSize: '14px',
-          fontFamily: "'DM Sans', sans-serif",
-          outline: 'none',
-          boxSizing: 'border-box',
-        }}
-        placeholder="Rechercher un exercice…"
-        value={query}
-        onChange={e => { setQuery(e.target.value); setOpen(true); onChange(null) }}
-        onFocus={() => { if (query.length > 0) setOpen(true) }}
-        autoComplete="off"
-      />
-      {open && filtered.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          left: 0,
-          right: 0,
-          background: '#1A1D1B',
-          border: '1px solid #252924',
-          borderRadius: '8px',
-          zIndex: 100,
-          maxHeight: '260px',
-          overflowY: 'auto',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-        }}>
-          {filtered.map(ex => (
-            <div
-              key={ex.id}
-              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #1E2320' }}
-              onMouseDown={() => select(ex)}
-              onMouseEnter={e => e.currentTarget.style.background = '#252924'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 500, color: '#F0F0EE', flex: 1 }}>{ex.name}</span>
-                <TypeBadge type={ex.exercise_type} />
-              </div>
-              <MuscleTags muscles={ex.muscle_groups} />
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -190,6 +102,8 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
   const [exercises, setExercises] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showSelector, setShowSelector] = useState(false)
+  const [selectorSetIndex, setSelectorSetIndex] = useState(null)
 
   useEffect(() => {
     supabase.from('exercises').select('id, name, exercise_type, muscle_groups').order('name')
@@ -277,25 +191,75 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
 
             <div style={{ marginBottom: '10px' }}>
               <label style={s.fieldLabel}>Exercice *</label>
-              <ExerciseSearch
-                exercises={exercises}
-                value={set.exercise}
-                onChange={ex => updateSet(i, 'exercise', ex)}
-                index={i}
-              />
-              {set.exercise && (
-                <div style={s.selectedInfo}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: set.exercise.muscle_groups?.length ? '0' : '0' }}>
-                    <span style={{ fontSize: '12px', color: '#6B7068' }}>Type :</span>
-                    <TypeBadge type={set.exercise.exercise_type} />
-                  </div>
-                  {set.exercise.muscle_groups?.length > 0 && (
-                    <div style={{ marginTop: '6px' }}>
-                      <span style={{ fontSize: '12px', color: '#6B7068', marginRight: '6px' }}>Muscles :</span>
-                      <MuscleTags muscles={set.exercise.muscle_groups} />
+              {set.exercise ? (
+                <div>
+                  <div style={{
+                    background: '#0D0F0E',
+                    border: '1px solid #252924',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    marginBottom: '8px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: '#F0F0EE' }}>{set.exercise.name}</span>
+                      <button
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#6B7068',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          padding: '2px 6px',
+                        }}
+                        onClick={() => updateSet(i, 'exercise', null)}
+                      >
+                        ✕
+                      </button>
                     </div>
-                  )}
+                  </div>
+                  <div style={s.selectedInfo}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: set.exercise.muscle_groups?.length ? '0' : '0' }}>
+                      <span style={{ fontSize: '12px', color: '#6B7068' }}>Type :</span>
+                      <TypeBadge type={set.exercise.exercise_type} />
+                    </div>
+                    {set.exercise.muscle_groups?.length > 0 && (
+                      <div style={{ marginTop: '6px' }}>
+                        <span style={{ fontSize: '12px', color: '#6B7068', marginRight: '6px' }}>Muscles :</span>
+                        <MuscleTags muscles={set.exercise.muscle_groups} />
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ) : (
+                <button
+                  style={{
+                    width: '100%',
+                    background: '#0D0F0E',
+                    border: '1px solid #252924',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    color: '#6B7068',
+                    fontSize: '14px',
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    textAlign: 'left',
+                  }}
+                  onClick={() => {
+                    setSelectorSetIndex(i)
+                    setShowSelector(true)
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = '#A8FF3E'
+                    e.currentTarget.style.color = '#A8FF3E'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = '#252924'
+                    e.currentTarget.style.color = '#6B7068'
+                  }}
+                >
+                  Sélectionner un exercice…
+                </button>
               )}
             </div>
 
@@ -325,6 +289,23 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
           </button>
         </div>
       </div>
+
+      {showSelector && (
+        <ExerciseSelector
+          exercises={exercises}
+          onSelect={ex => {
+            if (selectorSetIndex !== null) {
+              updateSet(selectorSetIndex, 'exercise', ex)
+              setShowSelector(false)
+              setSelectorSetIndex(null)
+            }
+          }}
+          onClose={() => {
+            setShowSelector(false)
+            setSelectorSetIndex(null)
+          }}
+        />
+      )}
     </div>
   )
 }
