@@ -1,16 +1,51 @@
-# React + Vite
+# FitTrack
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web de suivi sportif et nutritionnel, construite avec React et Supabase.
 
-Currently, two official plugins are available:
+## Fonctionnalités
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Authentification** — inscription et connexion via Supabase Auth
+- **Dashboard** — vue d'ensemble hebdomadaire (séances, séries, calories, protéines)
+- **Workouts** — création, consultation et suppression de séances d'entraînement
+- **Nutrition** _(à venir)_ — suivi des repas et des apports caloriques
 
-## React Compiler
+## Stack technique
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Couche     | Technologie                        |
+| ---------- | ---------------------------------- |
+| Frontend   | React 19, React Router 7           |
+| Build      | Vite 8, Tailwind CSS 4             |
+| Backend    | Supabase (PostgreSQL + Auth)       |
+| Linting    | ESLint 10                          |
 
-## Expanding the ESLint configuration
+## Démarrage rapide
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# Installer les dépendances
+npm install
+
+# Lancer en développement
+npm run dev
+
+# Build de production
+npm run build
+```
+
+### Variables d'environnement
+
+Créez un fichier `.env` à la racine avec vos clés Supabase :
+
+```env
+VITE_SUPABASE_URL=https://<project>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-key>
+```
+
+## Structure du projet
+
+```
+src/
+├── components/       # Composants réutilisables (Navbar, WorkoutCard, …)
+├── contexts/         # Contextes React (AuthContext)
+├── lib/              # Client Supabase
+└── pages/            # Pages de l'application (Dashboard, WorkoutsPage, AuthPage)
+```
