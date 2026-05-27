@@ -146,7 +146,7 @@ export default function WorkoutsPage() {
     const { data, error } = await supabase
       .from('workouts')
       .select(`
-        id, title, notes, performed_at,
+        id, name, notes, performed_at,
         workout_sets (
           id, reps, weight_kg,
           exercises ( id, name, exercise_type, muscle_groups )
