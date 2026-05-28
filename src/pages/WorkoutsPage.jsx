@@ -66,24 +66,24 @@ const s = {
     marginBottom: '2rem',
   },
   statCard: {
-    background: '#161917',
-    border: '1px solid #1E2320',
-    borderRadius: '8px',
+    background: '#111310',
+    border: '0.5px solid #1e201d',
+    borderRadius: '10px',
     padding: '1rem 1.25rem',
   },
   statLabel: {
     fontFamily: "'DM Sans', sans-serif",
-    fontSize: '12px',
-    color: '#6B7068',
+    fontSize: '11px',
+    color: '#555',
     margin: '0 0 4px',
     textTransform: 'uppercase',
-    letterSpacing: '0.08em',
+    letterSpacing: '0.05em',
   },
   statValue: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '2rem',
-    fontWeight: 700,
-    color: '#F0F0EE',
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: '28px',
+    fontWeight: 500,
+    color: '#fff',
     margin: 0,
     lineHeight: 1,
   },
@@ -92,24 +92,23 @@ const s = {
   },
   emptyState: {
     textAlign: 'center',
-    padding: '4rem 2rem',
-    color: '#6B7068',
+    padding: '3rem 0',
+    color: '#444',
   },
   emptyIcon: {
     fontSize: '3rem',
     marginBottom: '1rem',
   },
   emptyTitle: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    color: '#3A3E38',
+    fontFamily: "'DM Sans', sans-serif",
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#555',
     margin: '0 0 8px',
   },
   emptyText: {
-    fontSize: '14px',
-    color: '#4A4E48',
+    fontSize: '13px',
+    color: '#666',
     margin: 0,
   },
   grid: {
@@ -178,6 +177,10 @@ export default function WorkoutsPage() {
 
   return (
     <div style={s.page}>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }

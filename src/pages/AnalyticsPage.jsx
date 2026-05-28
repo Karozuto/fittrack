@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
     })
 
     const result = Object.entries(weekMap).map(([week, exercises]) => ({
-      week,
+      Semaine: week,
       ...exercises,
     }))
     setWeightData(result)
@@ -255,10 +255,10 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={workoutData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#252620" />
-                  <XAxis dataKey="week" stroke="#444" />
+                  <XAxis dataKey="Semaine" stroke="#444" />
                   <YAxis stroke="#444" />
                   <Tooltip {...TOOLTIP_STYLE} />
-                  <Line type="monotone" dataKey="count" stroke="#A8FF3E" strokeWidth={2} dot={{ fill: '#A8FF3E' }} />
+                  <Line type="monotone" dataKey="Séances" stroke="#A8FF3E" strokeWidth={2} dot={{ fill: '#A8FF3E' }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -270,14 +270,14 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={weightData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#252620" />
-                    <XAxis dataKey="week" stroke="#444" />
+                    <XAxis dataKey="Semaine" stroke="#444" />
                     <YAxis stroke="#444" />
                     <Tooltip {...TOOLTIP_STYLE} />
                     <Legend />
                     {Object.keys(weightData[0] ?? {})
-                      .filter(k => k !== 'week')
+                      .filter(k => k !== 'Semaine')
                       .map((exercise, i) => (
-                        <Bar key={exercise} dataKey={exercise} fill={`hsl(${i * 60}, 70%, 60%)`} />
+                        <Bar key={exercise} dataKey={exercise} fill={`hsl(${i * 60}, 70%, 60%)`} isAnimationActive={false} />
                       ))}
                   </BarChart>
                 </ResponsiveContainer>
