@@ -37,6 +37,18 @@ const MUSCLE_COLOR_MAP = {
   mollets: '#ABEBC6', lombaires: '#F5B7B1', trapèze: '#D7BDE2',
 }
 
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background: 'rgba(17, 19, 16, 0.95)',
+    border: '0.5px solid rgba(37, 38, 32, 0.5)',
+    borderRadius: '4px',
+    color: '#888',
+    fontSize: '12px',
+    padding: '8px 10px',
+  },
+  labelStyle: { color: '#666', fontSize: '11px' },
+}
+
 // ─── composant ──────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -245,10 +257,7 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#252620" />
                   <XAxis dataKey="week" stroke="#444" />
                   <YAxis stroke="#444" />
-                  <Tooltip
-                    contentStyle={{ background: '#161917', border: '0.5px solid #252620', color: '#fff' }}
-                    labelStyle={{ color: '#A8FF3E' }}
-                  />
+                  <Tooltip {...TOOLTIP_STYLE} />
                   <Line type="monotone" dataKey="count" stroke="#A8FF3E" strokeWidth={2} dot={{ fill: '#A8FF3E' }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -263,10 +272,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#252620" />
                     <XAxis dataKey="week" stroke="#444" />
                     <YAxis stroke="#444" />
-                    <Tooltip
-                      contentStyle={{ background: '#161917', border: '0.5px solid #252620', color: '#fff' }}
-                      labelStyle={{ color: '#A8FF3E' }}
-                    />
+                    <Tooltip {...TOOLTIP_STYLE} />
                     <Legend />
                     {Object.keys(weightData[0] ?? {})
                       .filter(k => k !== 'week')
@@ -287,10 +293,7 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#252620" />
                     <XAxis dataKey="date" stroke="#444" />
                     <YAxis stroke="#444" />
-                    <Tooltip
-                      contentStyle={{ background: '#161917', border: '0.5px solid #252620', color: '#fff' }}
-                      labelStyle={{ color: '#A8FF3E' }}
-                    />
+                    <Tooltip {...TOOLTIP_STYLE} />
                     <Legend />
                     <Area type="monotone" dataKey="calories" stackId="1" fill="#A8FF3E" stroke="#A8FF3E" opacity={0.7} />
                     <Area type="monotone" dataKey="protein" stackId="1" fill="#85C1E2" stroke="#85C1E2" opacity={0.7} />
@@ -319,10 +322,7 @@ export default function AnalyticsPage() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={{ background: '#161917', border: '0.5px solid #252620', color: '#fff' }}
-                      labelStyle={{ color: '#A8FF3E' }}
-                    />
+                    <Tooltip {...TOOLTIP_STYLE} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

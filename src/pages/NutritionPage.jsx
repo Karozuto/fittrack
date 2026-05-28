@@ -11,7 +11,7 @@ const s = {
   page: {
     minHeight: '100vh',
     background: '#0D0F0E',
-    padding: '2rem 1.5rem',
+    padding: '2rem',
     fontFamily: "'DM Sans', sans-serif",
   },
   inner: {
