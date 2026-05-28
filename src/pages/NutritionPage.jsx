@@ -15,8 +15,8 @@ const s = {
     padding: '2rem',
     fontFamily: "'DM Sans', sans-serif",
   },
-  inner: {
-    maxWidth: '900px',
+  main: {
+    maxWidth: '1100px',
     margin: '0 auto',
   },
   header: {
@@ -230,11 +230,11 @@ export default function NutritionPage() {
     <div style={s.page}>
       <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
 
-      <div style={s.inner}>
+      <main style={s.main}>
         <div style={s.header}>
           <div style={s.titleBlock}>
-            <p style={s.eyebrow}>Nutrition</p>
-            <h1 style={s.title}>Macros</h1>
+            <p style={s.eyebrow}>NUTRITION</p>
+            <h1 style={s.title}>MACROS</h1>
           </div>
           <button
             style={{ ...s.btnAdd, opacity: btnHover ? 0.85 : 1 }}
@@ -292,7 +292,7 @@ export default function NutritionPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       {showModal && (
         <CreateMealModal

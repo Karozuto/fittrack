@@ -240,7 +240,7 @@ export default function AnalyticsPage() {
 
       <main style={s.main}>
         <div style={s.header}>
-          <h1 style={s.title}>Analyse et progression</h1>
+          <h1 style={s.title}>ANALYSE ET PROGRESSION</h1>
           <p style={s.subtitle}>Vois ta progression au fil du temps</p>
         </div>
 
@@ -345,7 +345,7 @@ const s = {
   },
   main: {
     padding: '2rem',
-    maxWidth: '1200px',
+    maxWidth: '1100px',
     margin: '0 auto',
   },
   header: {

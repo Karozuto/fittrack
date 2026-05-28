@@ -12,8 +12,8 @@ const s = {
     padding: '2rem',
     fontFamily: "'DM Sans', sans-serif",
   },
-  inner: {
-    maxWidth: '900px',
+  main: {
+    maxWidth: '1100px',
     margin: '0 auto',
   },
   header: {
@@ -172,11 +172,11 @@ export default function WorkoutsPage() {
         }
       `}</style>
 
-      <div style={s.inner}>
+      <main style={s.main}>
         <div style={s.header}>
           <div style={s.titleBlock}>
-            <p style={s.eyebrow}>Mes séances</p>
-            <h1 style={s.title}>Workouts</h1>
+            <p style={s.eyebrow}>MES SÉANCES</p>
+            <h1 style={s.title}>WORKOUTS</h1>
           </div>
           <button
             style={{ ...s.btnCreate, opacity: btnHover ? 0.85 : 1 }}
@@ -233,7 +233,7 @@ export default function WorkoutsPage() {
             ))}
           </div>
         )}
-      </div>
+      </main>
 
       {showModal && (
         <CreateWorkoutModal

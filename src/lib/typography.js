@@ -31,6 +31,8 @@ export const TYPOGRAPHY = {
     fontWeight: WEIGHTS.medium,
     lineHeight: 1,
     margin: 0,
+    textTransform: 'uppercase',
+    letterSpacing: '0.02em',
   },
   sectionTitle: {
     fontFamily: FONTS.heading,
@@ -38,6 +40,8 @@ export const TYPOGRAPHY = {
     fontWeight: WEIGHTS.medium,
     lineHeight: 1,
     margin: 0,
+    textTransform: 'uppercase',
+    letterSpacing: '0.02em',
   },
   cardTitle: {
     fontFamily: FONTS.body,
