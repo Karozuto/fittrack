@@ -85,9 +85,21 @@ export default function AnalyticsPage() {
   }
 
   async function fetchWeightProgression() {
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('id, performed_at')
+      .eq('user_id', user.id)
+
+    if (!workouts || workouts.length === 0) {
+      setWeightData([])
+      return
+    }
+
+    const workoutMap = Object.fromEntries(workouts.map(w => [w.id, w]))
+
     const { data: sets } = await supabase
       .from('workout_sets')
-      .select('weight_kg, workout:workouts(performed_at), exercise:exercises(name)')
+      .select('weight_kg, workout_id, exercise:exercises(name)')
       .not('weight_kg', 'is', null)
 
     if (!sets || sets.length === 0) {
@@ -98,7 +110,8 @@ export default function AnalyticsPage() {
     const exerciseMap = {}
     ;(sets ?? []).forEach(s => {
       const exerciseName = s.exercise?.name ?? 'Exercice'
-      const date = s.workout?.performed_at ?? new Date().toISOString()
+      const workout = workoutMap[s.workout_id]
+      const date = workout?.performed_at ?? new Date().toISOString()
       if (!exerciseMap[exerciseName]) {
         exerciseMap[exerciseName] = []
       }
@@ -162,10 +175,24 @@ export default function AnalyticsPage() {
   }
 
   async function fetchMuscleTrends() {
+    // Fetch all workouts for this user first
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('id')
+      .eq('user_id', user.id)
+
+    if (!workouts || workouts.length === 0) {
+      setMuscleData([])
+      return
+    }
+
+    const workoutIds = workouts.map(w => w.id)
+
+    // Then fetch all sets for these workouts
     const { data: sets } = await supabase
       .from('workout_sets')
-      .select('exercise:exercises(muscle_groups), workout:workouts(user_id)')
-      .eq('workout.user_id', user.id)
+      .select('exercise:exercises(muscle_groups)')
+      .in('workout_id', workoutIds)
 
     const muscleMap = {}
     ;(sets ?? []).forEach(s => {
