@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { TYPOGRAPHY } from '../lib/typography'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -280,8 +281,7 @@ const s = {
     marginBottom: '4px',
   },
   greetingName: {
-    fontSize: '28px',
-    fontWeight: 500,
+    ...TYPOGRAPHY.pageTitle,
     color: '#fff',
   },
   metrics: {
@@ -331,13 +331,7 @@ const s = {
     alignItems: 'center',
     marginBottom: '14px',
   },
-  cardTitle: {
-    fontSize: '11px',
-    fontWeight: 500,
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-  },
+  cardTitle: TYPOGRAPHY.cardTitle,
   cardAction: {
     fontSize: '12px',
     color: '#A8FF3E',

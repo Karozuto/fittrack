@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import WorkoutCard from '../components/WorkoutCard'
 import CreateWorkoutModal from '../components/CreateWorkoutModal'
+import { TYPOGRAPHY, FONTS, SIZES } from '../lib/typography'
 
 const s = {
   page: {
@@ -23,23 +24,13 @@ const s = {
   },
   titleBlock: {},
   eyebrow: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '11px',
-    fontWeight: 600,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
+    ...TYPOGRAPHY.label,
     color: '#A8FF3E',
     margin: '0 0 4px',
   },
   title: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '2.8rem',
-    fontWeight: 700,
-    color: '#F0F0EE',
-    textTransform: 'uppercase',
-    letterSpacing: '-0.01em',
-    lineHeight: 1,
-    margin: 0,
+    ...TYPOGRAPHY.pageTitle,
+    color: '#fff',
   },
   btnCreate: {
     display: 'flex',
@@ -71,14 +62,7 @@ const s = {
     borderRadius: '10px',
     padding: '1rem 1.25rem',
   },
-  statLabel: {
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: '11px',
-    color: '#555',
-    margin: '0 0 4px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
+  statLabel: TYPOGRAPHY.label,
   statValue: {
     fontFamily: "'DM Sans', sans-serif",
     fontSize: '28px',

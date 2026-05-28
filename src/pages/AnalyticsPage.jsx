@@ -6,6 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts'
+import { TYPOGRAPHY } from '../lib/typography'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -351,10 +352,8 @@ const s = {
     marginBottom: '2rem',
   },
   title: {
-    fontSize: '32px',
-    fontWeight: 500,
+    ...TYPOGRAPHY.pageTitle,
     color: '#fff',
-    fontFamily: "'Barlow Condensed', sans-serif",
     marginBottom: '4px',
   },
   subtitle: {
@@ -373,12 +372,8 @@ const s = {
     padding: '1.5rem',
   },
   cardTitle: {
-    fontSize: '13px',
-    fontWeight: 500,
+    ...TYPOGRAPHY.cardTitle,
     color: '#A8FF3E',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    marginBottom: '1rem',
   },
   loading: {
     color: '#444',

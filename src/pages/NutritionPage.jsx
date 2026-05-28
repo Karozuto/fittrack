@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import MealSection from '../components/MealSection'
 import CreateMealModal from '../components/CreateMealModal'
 import DateSelector from '../components/DateSelector'
+import { TYPOGRAPHY, FONTS } from '../lib/typography'
 
 const MEAL_TYPES = ['Petit-déjeuner', 'Déjeuner', 'Encas', 'Dîner']
 
@@ -26,23 +27,13 @@ const s = {
   },
   titleBlock: {},
   eyebrow: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '11px',
-    fontWeight: 600,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
+    ...TYPOGRAPHY.label,
     color: '#A8FF3E',
     margin: '0 0 4px',
   },
   title: {
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '2.8rem',
-    fontWeight: 700,
+    ...TYPOGRAPHY.pageTitle,
     color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: '-0.01em',
-    lineHeight: 1,
-    margin: 0,
   },
   dateInput: {
     background: '#111310',
