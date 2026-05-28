@@ -15,6 +15,7 @@ const s = {
   main: {
     maxWidth: '1100px',
     margin: '0 auto',
+    padding: '0 1.5rem',
   },
   header: {
     display: 'flex',
@@ -53,8 +54,8 @@ const s = {
   statsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '12px',
-    marginBottom: '2rem',
+    gap: '10px',
+    marginBottom: '1.5rem',
   },
   statCard: {
     background: '#111310',

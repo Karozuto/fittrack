@@ -18,6 +18,7 @@ const s = {
   main: {
     maxWidth: '1100px',
     margin: '0 auto',
+    padding: '0 1.5rem',
   },
   header: {
     display: 'flex',

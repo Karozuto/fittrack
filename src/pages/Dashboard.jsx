@@ -268,7 +268,7 @@ const s = {
     fontFamily: "'DM Sans', sans-serif",
   },
   main: {
-    padding: '2rem',
+    padding: '1.5rem',
     maxWidth: '1100px',
     margin: '0 auto',
   },
@@ -287,8 +287,8 @@ const s = {
   metrics: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '10px',
-    marginBottom: '1.5rem',
+    gap: '8px',
+    marginBottom: '1rem',
   },
   metricCard: {
     background: '#111310',
@@ -317,7 +317,7 @@ const s = {
   grid2: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
+    gap: '10px',
   },
   card: {
     background: '#111310',

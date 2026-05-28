@@ -240,8 +240,8 @@ export default function AnalyticsPage() {
 
       <main style={s.main}>
         <div style={s.header}>
-          <h1 style={s.title}>ANALYSE ET PROGRESSION</h1>
-          <p style={s.subtitle}>Vois ta progression au fil du temps</p>
+          <p style={s.eyebrow}>ANALYSE</p>
+          <h1 style={s.title}>PROGRESSION</h1>
         </div>
 
         {loading ? (
@@ -344,32 +344,38 @@ const s = {
     fontFamily: "'DM Sans', sans-serif",
   },
   main: {
-    padding: '2rem',
+    padding: '1.5rem',
     maxWidth: '1100px',
     margin: '0 auto',
   },
   header: {
-    marginBottom: '2rem',
+    marginBottom: '1.5rem',
+  },
+  eyebrow: {
+    ...TYPOGRAPHY.label,
+    color: '#A8FF3E',
+    margin: '0 0 4px',
   },
   title: {
     ...TYPOGRAPHY.pageTitle,
     color: '#fff',
-    marginBottom: '4px',
+    marginBottom: '0',
   },
   subtitle: {
-    fontSize: '14px',
+    fontSize: '12px',
     color: '#666',
+    margin: '0',
   },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-    gap: '16px',
+    gap: '12px',
   },
   card: {
     background: '#111310',
     border: '0.5px solid #1e201d',
     borderRadius: '10px',
-    padding: '1.5rem',
+    padding: '1rem',
   },
   cardTitle: {
     ...TYPOGRAPHY.cardTitle,
