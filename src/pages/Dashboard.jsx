@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { TYPOGRAPHY } from '../lib/typography'
+import PageLayout from '../components/PageLayout'
+import {
+  GRID_2COL, CARD_ROUNDED, METRIC_CARD,
+  METRIC_LABEL, METRIC_VALUE, METRIC_UNIT, ROW, ROW_TITLE, ROW_META, BADGE,
+  BTN_SECONDARY,
+} from '../lib/commonStyles'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -56,11 +62,6 @@ export default function Dashboard() {
   const [metrics,    setMetrics]    = useState({ seances: 0, series: 0, calories: 0, proteines: 0 })
   const [loading,    setLoading]    = useState(true)
   const [hoveredBtn, setHoveredBtn] = useState(null) // 'seance' | 'repas' | null
-
-  useEffect(() => {
-    if (!user) return
-    fetchAll()
-  }, [user])
 
   async function fetchAll() {
     setLoading(true)
@@ -133,16 +134,19 @@ export default function Dashboard() {
   const mealKcal = (meal) =>
     Math.round((meal.food_items ?? []).reduce((s, fi) => s + (fi.calories ?? 0), 0))
 
+  // Chargement initial des données (et au changement d'utilisateur).
+  useEffect(() => {
+    if (!user) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
   // ─── rendu ────────────────────────────────────────────────────────────────
 
   return (
-    <div style={s.page}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
-
-      <main style={s.main}>
+    <PageLayout>
+      <div>
         {/* Salutation */}
         <div style={s.greeting}>
           <p style={s.greetingSub}>{todayLabel()}</p>
@@ -171,12 +175,7 @@ export default function Dashboard() {
         <div style={s.grid2}>
           {/* Séances */}
           <div style={s.card}>
-            <div style={s.cardHeader}>
-              <span style={s.cardTitle}>Dernières séances</span>
-              <button style={s.cardAction} onClick={() => navigate('/workouts')}>
-                + Nouvelle séance
-              </button>
-            </div>
+            <span style={s.cardTitle}>Dernières séances</span>
             {loading ? (
               <p style={s.empty}>Chargement…</p>
             ) : workouts.length === 0 ? (
@@ -201,12 +200,7 @@ export default function Dashboard() {
 
           {/* Repas */}
           <div style={s.card}>
-            <div style={s.cardHeader}>
-              <span style={s.cardTitle}>Repas du jour</span>
-              <button style={s.cardAction} onClick={() => navigate('/nutrition')}>
-                + Ajouter un repas
-              </button>
-            </div>
+            <span style={s.cardTitle}>Repas du jour</span>
             {loading ? (
               <p style={s.empty}>Chargement…</p>
             ) : meals.length === 0 ? (
@@ -239,7 +233,8 @@ export default function Dashboard() {
             onMouseLeave={() => setHoveredBtn(null)}
             onClick={() => navigate('/workouts')}
           >
-            + Ajouter une séance
+            <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>+</span>
+            Ajouter une séance
           </button>
           <button
             style={{
@@ -251,144 +246,107 @@ export default function Dashboard() {
             onMouseLeave={() => setHoveredBtn(null)}
             onClick={() => navigate('/nutrition')}
           >
-            + Ajouter un repas
+            <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>+</span>
+            Ajouter un repas
           </button>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageLayout>
   )
 }
 
 // ─── styles ─────────────────────────────────────────────────────────────────
 
 const s = {
-  page: {
-    minHeight: '100vh',
-    background: '#0D0F0E',
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  main: {
-    padding: '1.5rem',
-    maxWidth: '1100px',
-    margin: '0 auto',
-  },
-  greeting: { marginBottom: '1.5rem' },
+  greeting: { marginBottom: '1rem' },
   greetingSub: {
-    color: '#444',
-    fontSize: '12px',
+    color: '#666',
+    fontSize: '11px',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
-    marginBottom: '4px',
+    marginBottom: '2px',
+    fontWeight: 500,
   },
   greetingName: {
     ...TYPOGRAPHY.pageTitle,
     color: '#fff',
+    fontSize: '28px',
   },
   metrics: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(2, 1fr)',
     gap: '8px',
-    marginBottom: '1rem',
+    marginBottom: '1.5rem',
   },
   metricCard: {
-    background: '#111310',
-    border: '0.5px solid #1e201d',
-    borderRadius: '10px',
-    padding: '14px 16px',
+    ...METRIC_CARD,
+    padding: '12px 14px',
   },
   metricLbl: {
-    color: '#444',
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '6px',
+    ...METRIC_LABEL,
+    fontSize: '10px',
+    marginBottom: '4px',
   },
   metricVal: {
-    fontSize: '28px',
-    fontWeight: 500,
-    color: '#fff',
-    lineHeight: 1,
+    ...METRIC_VALUE,
+    fontSize: '24px',
   },
   metricUnit: {
-    fontSize: '12px',
-    color: '#555',
-    marginTop: '4px',
-  },
-  grid2: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '10px',
-  },
-  card: {
-    background: '#111310',
-    border: '0.5px solid #1e201d',
-    borderRadius: '10px',
-    padding: '1rem 1.25rem',
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '14px',
-  },
-  cardTitle: TYPOGRAPHY.cardTitle,
-  cardAction: {
-    fontSize: '12px',
-    color: '#A8FF3E',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: "'DM Sans', sans-serif",
-    outline: 'none',
-  },
-  row: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 0',
-    borderBottom: '0.5px solid #1a1c19',
-  },
-  rowTitle: {
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#fff',
-  },
-  rowMeta: {
+    ...METRIC_UNIT,
     fontSize: '11px',
-    color: '#444',
     marginTop: '2px',
   },
-  badge: {
+  grid2: GRID_2COL,
+  card: {
+    ...CARD_ROUNDED,
+    padding: '1rem',
+  },
+  cardTitle: {
+    ...TYPOGRAPHY.cardTitle,
+    marginBottom: '12px',
     fontSize: '11px',
-    color: '#555',
-    background: '#0D0F0E',
-    border: '0.5px solid #252620',
-    borderRadius: '5px',
-    padding: '3px 8px',
-    whiteSpace: 'nowrap',
+    display: 'block',
+  },
+  row: {
+    ...ROW,
+    padding: '8px 0',
+  },
+  rowTitle: {
+    ...ROW_TITLE,
+    fontSize: '12px',
+  },
+  rowMeta: {
+    ...ROW_META,
+    fontSize: '10px',
+    marginTop: '1px',
+  },
+  badge: {
+    ...BADGE,
+    fontSize: '10px',
+    padding: '2px 6px',
   },
   empty: {
-    color: '#333',
+    color: '#555',
     fontSize: '12px',
     textAlign: 'center',
-    padding: '1.5rem 0',
-    lineHeight: 1.7,
+    padding: '1rem 0',
+    lineHeight: 1.6,
   },
   fab: {
-    display: 'flex',
-    gap: '8px',
+    ...GRID_2COL,
     marginTop: '1.5rem',
+    gap: '8px',
   },
   fabBtn: {
-    flex: 1,
-    border: '1px solid #A8FF3E',
-    borderRadius: '8px',
-    padding: '12px',
+    ...BTN_SECONDARY,
+    padding: '11px 16px',
     fontSize: '13px',
     fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: "'DM Sans', sans-serif",
-    transition: 'background 0.2s, color 0.2s',
-    outline: 'none',
+    flex: 1,
+    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
   },
 }

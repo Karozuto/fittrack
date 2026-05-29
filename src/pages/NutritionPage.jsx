@@ -4,134 +4,100 @@ import { supabase } from '../lib/supabase'
 import MealSection from '../components/MealSection'
 import CreateMealModal from '../components/CreateMealModal'
 import DateSelector from '../components/DateSelector'
-import { TYPOGRAPHY, FONTS } from '../lib/typography'
+import PageHeader from '../components/PageHeader'
+import PageLayout from '../components/PageLayout'
+import { BTN_PRIMARY, CARD_ROUNDED, ERROR_MESSAGE } from '../lib/commonStyles'
 
 const MEAL_TYPES = ['Petit-déjeuner', 'Déjeuner', 'Encas', 'Dîner']
 
 const s = {
-  page: {
-    minHeight: '100vh',
-    background: '#0D0F0E',
-    padding: '2rem',
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  main: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '0 1.5rem',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: '2rem',
-  },
-  titleBlock: {},
-  eyebrow: {
-    ...TYPOGRAPHY.label,
-    color: '#A8FF3E',
-    margin: '0 0 4px',
-  },
-  title: {
-    ...TYPOGRAPHY.pageTitle,
-    color: '#fff',
+  yearWithBtn: {
+    position: 'relative',
+    marginBottom: '1.5rem',
   },
   dateInput: {
     background: '#111310',
     border: '1px solid #252924',
     borderRadius: '6px',
-    padding: '10px 14px',
+    padding: '8px 12px',
     color: '#fff',
-    fontSize: '14px',
+    fontSize: '13px',
     fontFamily: "'DM Sans', sans-serif",
     outline: 'none',
     boxSizing: 'border-box',
+    height: '36px',
+    alignSelf: 'center',
   },
   btnAdd: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: '#A8FF3E',
-    color: '#0D0F0E',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '10px 20px',
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontWeight: 700,
-    fontSize: '1rem',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    cursor: 'pointer',
-    transition: 'opacity 0.15s',
-    flexShrink: 0,
+    ...BTN_PRIMARY,
+    position: 'absolute',
+    top: 0,
+    right: 0,
   },
   summaryCard: {
-    background: '#111310',
-    border: '0.5px solid #1e201d',
-    borderRadius: '8px',
-    padding: '1.5rem',
-    marginBottom: '2rem',
+    ...CARD_ROUNDED,
+    padding: '1rem',
+    marginBottom: '1.5rem',
   },
   summaryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: '1rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+    gap: '0.75rem',
   },
   summaryItem: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: '2px',
   },
   summaryLabel: {
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: 600,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    color: '#555',
+    color: '#666',
     margin: 0,
   },
   summaryValue: {
     fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '1.8rem',
+    fontSize: '1.5rem',
     fontWeight: 700,
     color: '#A8FF3E',
     margin: 0,
+    lineHeight: 1,
   },
   sectionsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem',
+    gap: '1rem',
   },
   emptyState: {
     textAlign: 'center',
-    padding: '4rem 2rem',
-    color: '#555',
+    padding: '2rem 1rem',
+    color: '#666',
   },
   emptyIcon: {
-    fontSize: '3rem',
-    marginBottom: '1rem',
+    fontSize: '2.5rem',
+    marginBottom: '0.75rem',
   },
   emptyTitle: {
     fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '1.5rem',
+    fontSize: '13px',
     fontWeight: 700,
     textTransform: 'uppercase',
-    color: '#3A3E38',
-    margin: '0 0 8px',
+    color: '#777',
+    margin: '0 0 6px',
   },
   emptyText: {
-    fontSize: '14px',
-    color: '#4A4E48',
+    fontSize: '12px',
+    color: '#888',
     margin: 0,
+    lineHeight: 1.5,
   },
   error: {
-    background: '#2A1515',
-    border: '1px solid #4A2020',
-    borderRadius: '6px',
-    padding: '12px 14px',
-    color: '#FF7070',
-    fontSize: '13px',
-    marginBottom: '1rem',
+    ...ERROR_MESSAGE,
+    marginBottom: '0.75rem',
+    fontSize: '12px',
+    padding: '10px 12px',
   },
 }
 
@@ -148,6 +114,7 @@ export default function NutritionPage() {
   useEffect(() => {
     fetchMeals()
     fetchMonthMeals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
 
   async function fetchMeals() {
@@ -228,15 +195,12 @@ export default function NutritionPage() {
   const hasData = Object.values(displayedMeals).some(list => list.length > 0)
 
   return (
-    <div style={s.page}>
-      <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+    <PageLayout>
+      <div>
+        <PageHeader eyebrow="NUTRITION" title="MACROS" />
 
-      <main style={s.main}>
-        <div style={s.header}>
-          <div style={s.titleBlock}>
-            <p style={s.eyebrow}>NUTRITION</p>
-            <h1 style={s.title}>MACROS</h1>
-          </div>
+        <div style={s.yearWithBtn}>
+          <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} daysWithMeals={daysWithMeals} />
           <button
             style={{ ...s.btnAdd, opacity: btnHover ? 0.85 : 1 }}
             onMouseEnter={() => setBtnHover(true)}
@@ -247,8 +211,6 @@ export default function NutritionPage() {
             Ajouter
           </button>
         </div>
-
-        <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} daysWithMeals={daysWithMeals} />
 
         {error && <div style={s.error}>{error}</div>}
 
@@ -293,7 +255,7 @@ export default function NutritionPage() {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {showModal && (
         <CreateMealModal
@@ -305,6 +267,6 @@ export default function NutritionPage() {
           }}
         />
       )}
-    </div>
+    </PageLayout>
   )
 }

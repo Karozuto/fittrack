@@ -3,73 +3,48 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import WorkoutCard from '../components/WorkoutCard'
 import CreateWorkoutModal from '../components/CreateWorkoutModal'
-import { TYPOGRAPHY, FONTS, SIZES } from '../lib/typography'
+import PageHeader from '../components/PageHeader'
+import PageLayout from '../components/PageLayout'
+import { TYPOGRAPHY } from '../lib/typography'
+import { BTN_PRIMARY, GRID_3COL, CARD_ROUNDED } from '../lib/commonStyles'
 
 const s = {
-  page: {
-    minHeight: '100vh',
-    background: '#0D0F0E',
-    padding: '2rem',
-    fontFamily: "'DM Sans', sans-serif",
-  },
-  main: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '0 1.5rem',
-  },
-  header: {
+  statsWithBtn: {
     display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: '2rem',
-  },
-  titleBlock: {},
-  eyebrow: {
-    ...TYPOGRAPHY.label,
-    color: '#A8FF3E',
-    margin: '0 0 4px',
-  },
-  title: {
-    ...TYPOGRAPHY.pageTitle,
-    color: '#fff',
-  },
-  btnCreate: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: '#A8FF3E',
-    color: '#0D0F0E',
-    border: 'none',
-    borderRadius: '6px',
-    padding: '10px 20px',
-    fontFamily: "'Barlow Condensed', sans-serif",
-    fontWeight: 700,
-    fontSize: '1rem',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    cursor: 'pointer',
-    transition: 'opacity 0.15s',
-    flexShrink: 0,
-  },
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '10px',
+    alignItems: 'stretch',
+    gap: '12px',
     marginBottom: '1.5rem',
   },
-  statCard: {
-    background: '#111310',
-    border: '0.5px solid #1e201d',
-    borderRadius: '10px',
-    padding: '1rem 1.25rem',
+  statsRow: {
+    ...GRID_3COL,
+    gap: '8px',
+    flex: 1,
+    display: 'grid',
   },
-  statLabel: TYPOGRAPHY.label,
+  btnCreate: {
+    ...BTN_PRIMARY,
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    minWidth: 'auto',
+    padding: '0 20px',
+  },
+  statCard: {
+    ...CARD_ROUNDED,
+    padding: '12px 14px',
+  },
+  statLabel: {
+    ...TYPOGRAPHY.label,
+    fontSize: '10px',
+  },
   statValue: {
     fontFamily: "'DM Sans', sans-serif",
-    fontSize: '28px',
-    fontWeight: 500,
+    fontSize: '22px',
+    fontWeight: 600,
     color: '#fff',
-    margin: 0,
+    margin: '4px 0 0',
     lineHeight: 1,
   },
   statAccent: {
@@ -77,39 +52,40 @@ const s = {
   },
   emptyState: {
     textAlign: 'center',
-    padding: '3rem 0',
-    color: '#444',
+    padding: '2rem 0',
+    color: '#555',
   },
   emptyIcon: {
-    fontSize: '3rem',
-    marginBottom: '1rem',
+    fontSize: '2.5rem',
+    marginBottom: '0.75rem',
   },
   emptyTitle: {
     fontFamily: "'DM Sans', sans-serif",
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#555',
-    margin: '0 0 8px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#666',
+    margin: '0 0 6px',
   },
   emptyText: {
-    fontSize: '13px',
-    color: '#666',
+    fontSize: '12px',
+    color: '#777',
     margin: 0,
+    lineHeight: 1.5,
   },
   grid: {
     display: 'grid',
-    gap: '12px',
+    gap: '10px',
   },
   loadingRow: {
     display: 'flex',
-    gap: '12px',
+    gap: '10px',
     flexDirection: 'column',
   },
   skeleton: {
     background: '#161917',
     border: '1px solid #1E2320',
     borderRadius: '8px',
-    height: '120px',
+    height: '100px',
     animation: 'pulse 1.5s ease-in-out infinite',
   },
 }
@@ -119,10 +95,12 @@ export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingWorkout, setEditingWorkout] = useState(null)
   const [btnHover, setBtnHover] = useState(false)
 
   useEffect(() => {
     fetchWorkouts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchWorkouts() {
@@ -143,13 +121,24 @@ export default function WorkoutsPage() {
     setLoading(false)
   }
 
-  function handleWorkoutCreated(newWorkout) {
+  function handleWorkoutSaved() {
     setShowModal(false)
+    setEditingWorkout(null)
     fetchWorkouts()
   }
 
   function handleWorkoutDeleted(workoutId) {
     setWorkouts(prev => prev.filter(w => w.id !== workoutId))
+  }
+
+  function handleEdit(workout) {
+    setEditingWorkout(workout)
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditingWorkout(null)
   }
 
   const totalSets = workouts.reduce((acc, w) => acc + (w.workout_sets?.length || 0), 0)
@@ -161,36 +150,12 @@ export default function WorkoutsPage() {
   }).length
 
   return (
-    <div style={s.page}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
+    <PageLayout>
+      <div>
+        <PageHeader eyebrow="MES SÉANCES" title="WORKOUTS" />
 
-      <main style={s.main}>
-        <div style={s.header}>
-          <div style={s.titleBlock}>
-            <p style={s.eyebrow}>MES SÉANCES</p>
-            <h1 style={s.title}>WORKOUTS</h1>
-          </div>
-          <button
-            style={{ ...s.btnCreate, opacity: btnHover ? 0.85 : 1 }}
-            onMouseEnter={() => setBtnHover(true)}
-            onMouseLeave={() => setBtnHover(false)}
-            onClick={() => setShowModal(true)}
-          >
-            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
-            Nouvelle séance
-          </button>
-        </div>
-
-        <div style={s.statsRow}>
+        <div style={s.statsWithBtn}>
+          <div style={s.statsRow}>
           <div style={s.statCard}>
             <p style={s.statLabel}>Total séances</p>
             <p style={s.statValue}>
@@ -209,6 +174,16 @@ export default function WorkoutsPage() {
               <span style={s.statAccent}>{totalSets}</span>
             </p>
           </div>
+          </div>
+          <button
+            style={{ ...s.btnCreate, opacity: btnHover ? 0.85 : 1 }}
+            onMouseEnter={() => setBtnHover(true)}
+            onMouseLeave={() => setBtnHover(false)}
+            onClick={() => setShowModal(true)}
+          >
+            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span>
+            Nouvelle séance
+          </button>
         </div>
 
         {loading ? (
@@ -230,18 +205,20 @@ export default function WorkoutsPage() {
                 key={workout.id}
                 workout={workout}
                 onDeleted={handleWorkoutDeleted}
+                onEdit={handleEdit}
               />
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {showModal && (
         <CreateWorkoutModal
-          onClose={() => setShowModal(false)}
-          onCreated={handleWorkoutCreated}
+          workout={editingWorkout}
+          onClose={closeModal}
+          onCreated={handleWorkoutSaved}
         />
       )}
-    </div>
+    </PageLayout>
   )
 }

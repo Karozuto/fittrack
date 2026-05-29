@@ -28,7 +28,7 @@ export const TYPOGRAPHY = {
   pageTitle: {
     fontFamily: FONTS.heading,
     fontSize: SIZES.pageTitle,
-    fontWeight: WEIGHTS.medium,
+    fontWeight: WEIGHTS.bold,
     lineHeight: 1,
     margin: 0,
     textTransform: 'uppercase',
@@ -37,7 +37,7 @@ export const TYPOGRAPHY = {
   sectionTitle: {
     fontFamily: FONTS.heading,
     fontSize: SIZES.sectionTitle,
-    fontWeight: WEIGHTS.medium,
+    fontWeight: WEIGHTS.bold,
     lineHeight: 1,
     margin: 0,
     textTransform: 'uppercase',
@@ -46,10 +46,10 @@ export const TYPOGRAPHY = {
   cardTitle: {
     fontFamily: FONTS.body,
     fontSize: SIZES.xs,
-    fontWeight: WEIGHTS.medium,
+    fontWeight: WEIGHTS.bold,
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
-    color: '#555',
+    color: '#A8FF3E',
     margin: 0,
     marginBottom: '1rem',
   },

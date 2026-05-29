@@ -1,24 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ExerciseCard from './ExerciseCard'
 
-export default function ExerciseSelector({ exercises, onSelect, onClose }) {
+export default function ExerciseSelector({ exercises = [], onSelect, onClose }) {
   const [query, setQuery] = useState('')
-  const [filtered, setFiltered] = useState([])
 
-  useEffect(() => {
-    if (query.length < 1) {
-      setFiltered(exercises)
-      return
-    }
-    const q = query.toLowerCase()
-    setFiltered(
-      exercises.filter(e =>
+  // Valeur dérivée : pas besoin d'un effet pour filtrer (calcul pendant le rendu).
+  const q = query.trim().toLowerCase()
+  const filtered = q.length < 1
+    ? exercises
+    : exercises.filter(e =>
         e.name.toLowerCase().includes(q) ||
         (e.muscle_groups || []).some(m => m.toLowerCase().includes(q)) ||
         (e.exercise_type || '').toLowerCase().includes(q)
       )
-    )
-  }, [query, exercises])
 
   const s = {
     overlay: {

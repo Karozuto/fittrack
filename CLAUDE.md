@@ -24,7 +24,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 ## Architecture
 
-**Stack**: React 19, Vite 8, React Router DOM 7, Tailwind CSS 4 (imported but barely used — see Styling), Supabase (auth + Postgres).
+**Stack**: React 19, Vite 8, React Router DOM 7, Tailwind CSS 4 (imported but barely used — see Styling), Recharts 3 (charts on the Analytics page), Supabase (auth + Postgres).
 
 ### Auth flow
 
@@ -34,7 +34,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 ### Routing
 
-Routes are declared in `src/App.jsx`. `/`, `/workouts`, and `/nutrition` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component.
+Routes are declared in `src/App.jsx`. `/`, `/workouts`, `/nutrition`, and `/analytics` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component. The navbar links live in `src/components/Navbar.jsx` (the Analytics link is labelled "Analyse").
 
 ### Data access
 
@@ -117,3 +117,24 @@ food_items: id, meal_id, name, product_name, barcode, calories, protein_g, carbo
 ```
 
 Row-level security filters by `user_id`.
+
+## Analytics Feature
+
+Progression/analytics page at `/analytics` (`src/pages/AnalyticsPage.jsx`) built with **Recharts**. Two tabs:
+
+- **Workouts**: *Évolution par exercice* (dual-axis LineChart, weight + reps per session, exercise chosen via custom dropdown), *Séances par semaine* (LineChart by ISO week), *Distribution par groupe musculaire* (PieChart of set counts, percentage shown on hover only).
+- **Nutrition**: *Tendances nutritionnelles* (AreaChart, calories + protein, 28 days), *Répartition des macros* (PieChart, 28 days), *Calories par type de repas* (BarChart, one colored bar per meal type).
+
+Data is fetched inline via `supabase` (filtered by `user.id`) in `fetchAll()`, run from a `useEffect` keyed on `user`.
+
+### Custom dropdowns
+
+Native `<select>` can't be styled, so `ExerciseDropdown` (Analytics) and `YearDropdown` (`DateSelector`) are custom button+floating-panel widgets with click-outside handling. They cap visible items (~5) with `maxHeight` + `overflowY: auto`, and hide the scrollbar (`scrollbarWidth: 'none'` + injected `::-webkit-scrollbar{display:none}`).
+
+### Gotcha — React style shorthand vs longhand
+
+Do **not** mix the CSS shorthand `border: '1px solid transparent'` in one style object with the longhand `borderColor` in another (e.g. an active-state object). When React removes the longhand key it resets `border-color` to `currentColor` (the text color) without re-emitting the unchanged shorthand, so a stray border appears — and only *after* the element has had the longhand set once. This caused a grey border on the Analytics tabs that looked like a focus ring but wasn't. Fix: use consistent longhands (`borderWidth`/`borderStyle`/`borderColor`) across all state objects.
+
+### Lint conventions
+
+`npm run lint` is kept at **0 errors / 0 warnings**. For fetch-on-mount effects, declare the `useEffect` *after* the fetch functions (avoids `react-hooks/immutability` "accessed before declared") and suppress the expected `react-hooks/set-state-in-effect` and `react-hooks/exhaustive-deps` with line-targeted disables. Prefer deriving values during render over syncing them with an effect.

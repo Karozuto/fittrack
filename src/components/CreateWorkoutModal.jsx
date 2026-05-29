@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import ExerciseSelector from './ExerciseSelector'
+import { getMuscleColor } from '../lib/muscleColors'
 
 const TYPE_LABELS = {
   polyarticulaire: 'Polyarticulaire',
@@ -11,28 +12,21 @@ const TYPE_LABELS = {
   mobilité: 'Mobilité',
 }
 
-const TYPE_COLORS = {
-  polyarticulaire: { bg: '#A8FF3E18', text: '#A8FF3E' },
-  isolation: { bg: '#3EE0FF18', text: '#3EE0FF' },
-  cardio: { bg: '#FF9B3E18', text: '#FF9B3E' },
-  gainage: { bg: '#C03EFF18', text: '#C03EFF' },
-  mobilité: { bg: '#FFD93E18', text: '#FFD93E' },
-}
-
 function TypeBadge({ type }) {
   if (!type) return null
-  const c = TYPE_COLORS[type] || { bg: '#ffffff18', text: '#aaa' }
   return (
     <span style={{
       fontSize: '10px',
       fontFamily: "'Barlow Condensed', sans-serif",
       fontWeight: 700,
-      letterSpacing: '0.08em',
+      letterSpacing: '0.12em',
       textTransform: 'uppercase',
-      background: c.bg,
-      color: c.text,
-      padding: '2px 8px',
+      background: '#1E2320',
+      color: '#A8B0A6',
+      border: '1px solid #2A2E28',
+      padding: '3px 10px',
       borderRadius: '4px',
+      display: 'inline-block',
       flexShrink: 0,
     }}>
       {TYPE_LABELS[type] || type}
@@ -43,16 +37,15 @@ function TypeBadge({ type }) {
 function MuscleTags({ muscles }) {
   if (!muscles || muscles.length === 0) return null
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
       {muscles.map(m => (
         <span key={m} style={{
           fontSize: '11px',
           fontFamily: "'DM Sans', sans-serif",
-          background: '#1E2320',
-          color: '#8A8E88',
+          background: getMuscleColor(m) + '18',
+          color: getMuscleColor(m),
           padding: '2px 8px',
           borderRadius: '4px',
-          border: '1px solid #252924',
         }}>{m}</span>
       ))}
     </div>
@@ -93,12 +86,25 @@ const s = {
 
 function emptySet() { return { exercise: null, reps: '', weight_kg: '' } }
 
-export default function CreateWorkoutModal({ onClose, onCreated }) {
+function setsFromWorkout(workout) {
+  const ws = workout?.workout_sets
+  if (!ws || ws.length === 0) return [emptySet()]
+  return ws.map(s => ({
+    exercise: s.exercises || null,
+    reps: s.reps != null ? String(s.reps) : '',
+    weight_kg: s.weight_kg != null ? String(s.weight_kg) : '',
+  }))
+}
+
+export default function CreateWorkoutModal({ onClose, onCreated, workout }) {
   const { user } = useAuth()
-  const [title, setTitle] = useState('')
-  const [notes, setNotes] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [sets, setSets] = useState([emptySet()])
+  const isEdit = !!workout
+  const [title, setTitle] = useState(workout?.name || '')
+  const [notes, setNotes] = useState(workout?.notes || '')
+  const [date, setDate] = useState(
+    (workout?.performed_at ? new Date(workout.performed_at) : new Date()).toISOString().split('T')[0]
+  )
+  const [sets, setSets] = useState(() => setsFromWorkout(workout))
   const [exercises, setExercises] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -127,14 +133,26 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
     if (sets.some(s => !s.exercise || !s.reps)) { setError('Sélectionne un exercice et renseigne les reps pour chaque set.'); return }
     setSaving(true); setError('')
     try {
-      const { data: workout, error: wErr } = await supabase
-        .from('workouts')
-        .insert({ user_id: user.id, name: title.trim(), notes: notes.trim() || null, performed_at: new Date(date).toISOString() })
-        .select('id').single()
-      if (wErr) throw wErr
+      const payload = { name: title.trim(), notes: notes.trim() || null, performed_at: new Date(date).toISOString() }
+      let workoutId
+
+      if (isEdit) {
+        const { error: wErr } = await supabase.from('workouts').update(payload).eq('id', workout.id)
+        if (wErr) throw wErr
+        workoutId = workout.id
+        const { error: delErr } = await supabase.from('workout_sets').delete().eq('workout_id', workoutId)
+        if (delErr) throw delErr
+      } else {
+        const { data: created, error: wErr } = await supabase
+          .from('workouts')
+          .insert({ user_id: user.id, ...payload })
+          .select('id').single()
+        if (wErr) throw wErr
+        workoutId = created.id
+      }
 
       const setsToInsert = sets.map((s, idx) => ({
-        workout_id: workout.id,
+        workout_id: workoutId,
         exercise_id: s.exercise.id,
         set_number: idx + 1,
         reps: parseInt(s.reps) || 0,
@@ -142,7 +160,7 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
       }))
       const { error: sErr } = await supabase.from('workout_sets').insert(setsToInsert)
       if (sErr) throw sErr
-      onCreated(workout)
+      onCreated({ id: workoutId })
     } catch (e) {
       setError(e.message || 'Erreur lors de la sauvegarde.')
       setSaving(false)
@@ -153,7 +171,7 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={s.modal}>
         <div style={s.modalHeader}>
-          <h2 style={s.modalTitle}>Nouvelle séance</h2>
+          <h2 style={s.modalTitle}>{isEdit ? 'Modifier la séance' : 'Nouvelle séance'}</h2>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
 
@@ -223,8 +241,8 @@ export default function CreateWorkoutModal({ onClose, onCreated }) {
                       <TypeBadge type={set.exercise.exercise_type} />
                     </div>
                     {set.exercise.muscle_groups?.length > 0 && (
-                      <div style={{ marginTop: '6px' }}>
-                        <span style={{ fontSize: '12px', color: '#6B7068', marginRight: '6px' }}>Muscles :</span>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                        <span style={{ fontSize: '12px', color: '#6B7068' }}>Muscles :</span>
                         <MuscleTags muscles={set.exercise.muscle_groups} />
                       </div>
                     )}

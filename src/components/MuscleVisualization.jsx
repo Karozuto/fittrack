@@ -1,4 +1,4 @@
-export default function MuscleVisualization({ muscles = [], size = 140 }) {
+export default function MuscleVisualization({ size = 140 }) {
   return (
     <div style={{
       width: size,

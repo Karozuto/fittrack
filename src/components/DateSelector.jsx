@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const s = {
   container: {
@@ -146,11 +146,90 @@ const s = {
   },
 }
 
+const yd = {
+  wrap: { position: 'relative', minWidth: '120px' },
+  trigger: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
+    width: '100%', background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px',
+    padding: '10px 14px', color: '#F0F0EE', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
+    fontWeight: 500, cursor: 'pointer', transition: 'border-color 0.15s', outline: 'none',
+  },
+  chevron: { color: '#6B7068', fontSize: '10px', transition: 'transform 0.15s', flexShrink: 0 },
+  menu: {
+    position: 'absolute', top: 'calc(100% + 4px)', right: 0, left: 0, zIndex: 30,
+    background: '#161917', border: '1px solid #252924', borderRadius: '8px',
+    padding: '4px', maxHeight: '188px', overflowY: 'auto',
+    scrollbarWidth: 'none', msOverflowStyle: 'none',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  },
+  item: {
+    display: 'block', width: '100%', textAlign: 'left', background: 'transparent',
+    border: 'none', borderRadius: '5px', padding: '8px 10px', color: '#C8CBC6',
+    fontSize: '13px', fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+    transition: 'background 0.12s',
+  },
+  itemActive: { background: '#A8FF3E18', color: '#A8FF3E', fontWeight: 600 },
+}
+
+function YearDropdown({ options, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} style={yd.wrap}>
+      <button
+        style={{ ...yd.trigger, borderColor: open ? '#A8FF3E' : '#252924' }}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span>{value}</span>
+        <span style={{ ...yd.chevron, transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+      </button>
+      {open && (
+        <div className="yd-menu-scroll" style={yd.menu}>
+          <style>{`.yd-menu-scroll::-webkit-scrollbar{display:none}`}</style>
+          {options.map(year => {
+            const active = year === value
+            return (
+              <button
+                key={year}
+                style={{ ...yd.item, ...(active ? yd.itemActive : null) }}
+                onClick={() => { onChange(year); setOpen(false) }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#1E2320' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+              >
+                {year}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DateSelector({ selectedDate, onDateChange, daysWithMeals = new Set() }) {
   const [hoveredMonth, setHoveredMonth] = useState(null)
   const [hoveredDay, setHoveredDay] = useState(null)
   const dayRef = useRef(null)
   const selectedDateObj = new Date(selectedDate)
+
+  useEffect(() => {
+    // Scroll to selected day when component mounts or selectedDate changes
+    if (dayRef.current) {
+      const selectedDayBtn = dayRef.current.querySelector('[data-selected="true"]')
+      if (selectedDayBtn) {
+        selectedDayBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+  }, [selectedDate])
 
   function formatDate(date) {
     const d = String(date.getDate()).padStart(2, '0')
@@ -223,17 +302,11 @@ export default function DateSelector({ selectedDate, onDateChange, daysWithMeals
       {/* Année */}
       <div style={s.yearSection}>
         <label style={s.yearLabel}>Année</label>
-        <select
+        <YearDropdown
+          options={getYearsList()}
           value={selectedDateObj.getFullYear()}
-          onChange={e => handleSelectYear(parseInt(e.target.value))}
-          style={s.yearSelect}
-        >
-          {getYearsList().map(year => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+          onChange={handleSelectYear}
+        />
       </div>
 
       {/* Mois */}
@@ -281,12 +354,12 @@ export default function DateSelector({ selectedDate, onDateChange, daysWithMeals
           {getDaysList().map((date) => {
             const dateStr = formatDate(date)
             const isSelected = dateStr === selectedDate
-            const isToday = dateStr === formatDate(today)
             const isHovered = hoveredDay === dateStr
 
             return (
               <button
                 key={dateStr}
+                data-selected={isSelected ? 'true' : 'false'}
                 style={{
                   ...s.dayItem,
                   ...(daysWithMeals.has(dateStr) && !isSelected ? s.dayItemWithMeals : {}),

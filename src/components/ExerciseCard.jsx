@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import MuscleVisualization from './MuscleVisualization'
+import { getMuscleColor } from '../lib/muscleColors'
 
 const TYPE_LABELS = {
   polyarticulaire: 'Polyarticulaire',
@@ -9,27 +10,19 @@ const TYPE_LABELS = {
   mobilité: 'Mobilité',
 }
 
-const TYPE_COLORS = {
-  polyarticulaire: { bg: '#A8FF3E18', text: '#A8FF3E' },
-  isolation: { bg: '#3EE0FF18', text: '#3EE0FF' },
-  cardio: { bg: '#FF9B3E18', text: '#FF9B3E' },
-  gainage: { bg: '#C03EFF18', text: '#C03EFF' },
-  mobilité: { bg: '#FFD93E18', text: '#FFD93E' },
-}
-
 function TypeBadge({ type }) {
   if (!type) return null
-  const c = TYPE_COLORS[type] || { bg: '#ffffff18', text: '#aaa' }
   return (
     <span style={{
       fontSize: '10px',
       fontFamily: "'Barlow Condensed', sans-serif",
       fontWeight: 700,
-      letterSpacing: '0.08em',
+      letterSpacing: '0.12em',
       textTransform: 'uppercase',
-      background: c.bg,
-      color: c.text,
-      padding: '2px 8px',
+      background: '#1E2320',
+      color: '#A8B0A6',
+      border: '1px solid #2A2E28',
+      padding: '3px 10px',
       borderRadius: '4px',
       display: 'inline-block',
     }}>
@@ -66,7 +59,8 @@ export default function ExerciseCard({ exercise, onSelect }) {
       </div>
 
       {/* Exercise Info */}
-      <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%' }}>
+      <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', width: '100%' }}>
+        {/* Bloc type */}
         <div>
           <h3 style={{
             fontFamily: "'Barlow Condensed', sans-serif",
@@ -76,15 +70,36 @@ export default function ExerciseCard({ exercise, onSelect }) {
             margin: '0 0 8px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
+            lineHeight: 1.2,
+            minHeight: '33.6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
             {exercise.name}
           </h3>
           <TypeBadge type={exercise.exercise_type} />
         </div>
 
-        {/* Muscles */}
+        {/* Bloc muscles */}
         {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
-          <div style={{ marginTop: '10px' }}>
+          <div style={{
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: '1px solid #1E2320',
+            width: '100%',
+          }}>
+            <p style={{
+              fontSize: '9px',
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#4A4E48',
+              margin: '0 0 6px',
+            }}>
+              Muscles
+            </p>
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -97,11 +112,10 @@ export default function ExerciseCard({ exercise, onSelect }) {
                   style={{
                     fontSize: '10px',
                     fontFamily: "'DM Sans', sans-serif",
-                    background: '#0D0F0E',
-                    color: '#8A8E88',
+                    background: getMuscleColor(muscle) + '18',
+                    color: getMuscleColor(muscle),
                     padding: '2px 6px',
                     borderRadius: '3px',
-                    border: '1px solid #1E2320',
                   }}
                 >
                   {muscle}
