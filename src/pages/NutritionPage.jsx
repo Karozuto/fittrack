@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import MealSection from '../components/MealSection'
 import CreateMealModal from '../components/CreateMealModal'
+import EditFoodModal from '../components/EditFoodModal'
 import DateSelector from '../components/DateSelector'
 import PageHeader from '../components/PageHeader'
 import PageLayout from '../components/PageLayout'
@@ -36,34 +37,48 @@ const s = {
   },
   summaryCard: {
     ...CARD_ROUNDED,
-    padding: '1rem',
+    padding: '0.7rem 1rem',
     marginBottom: '1.5rem',
   },
   summaryGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-    gap: '0.75rem',
+    display: 'flex',
+    alignItems: 'center',
   },
   summaryItem: {
+    flex: 1,
     display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '0 8px',
   },
   summaryLabel: {
-    fontSize: '10px',
+    fontSize: '11px',
     fontWeight: 600,
-    letterSpacing: '0.06em',
+    letterSpacing: '0.04em',
     textTransform: 'uppercase',
-    color: '#666',
+    color: '#6B7068',
     margin: 0,
   },
   summaryValue: {
     fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '1.5rem',
+    fontSize: '1.05rem',
     fontWeight: 700,
     color: '#A8FF3E',
     margin: 0,
     lineHeight: 1,
+  },
+  summaryUnit: {
+    fontSize: '0.8rem',
+    color: '#6B7068',
+    marginLeft: '1px',
+    fontWeight: 700,
+  },
+  summarySep: {
+    width: '1px',
+    height: '14px',
+    background: '#252924',
+    flexShrink: 0,
   },
   sectionsContainer: {
     display: 'flex',
@@ -109,6 +124,7 @@ export default function NutritionPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [editingFood, setEditingFood] = useState(null)
   const [btnHover, setBtnHover] = useState(false)
 
   useEffect(() => {
@@ -221,17 +237,20 @@ export default function NutritionPage() {
                 <p style={s.summaryLabel}>Calories</p>
                 <p style={s.summaryValue}>{Math.round(totals.calories)}</p>
               </div>
+              <div style={s.summarySep} />
               <div style={s.summaryItem}>
                 <p style={s.summaryLabel}>Protéines</p>
-                <p style={s.summaryValue}>{totals.protein.toFixed(1)}g</p>
+                <p style={s.summaryValue}>{totals.protein.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
               </div>
+              <div style={s.summarySep} />
               <div style={s.summaryItem}>
                 <p style={s.summaryLabel}>Glucides</p>
-                <p style={s.summaryValue}>{totals.carbs.toFixed(1)}g</p>
+                <p style={s.summaryValue}>{totals.carbs.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
               </div>
+              <div style={s.summarySep} />
               <div style={s.summaryItem}>
                 <p style={s.summaryLabel}>Lipides</p>
-                <p style={s.summaryValue}>{totals.fat.toFixed(1)}g</p>
+                <p style={s.summaryValue}>{totals.fat.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
               </div>
             </div>
           </div>
@@ -251,6 +270,7 @@ export default function NutritionPage() {
                 type={type}
                 meals={displayedMeals[type] || []}
                 onMealDeleted={fetchMeals}
+                onEditFood={setEditingFood}
               />
             ))}
           </div>
@@ -263,6 +283,17 @@ export default function NutritionPage() {
           onClose={() => setShowModal(false)}
           onCreated={() => {
             setShowModal(false)
+            fetchMeals()
+          }}
+        />
+      )}
+
+      {editingFood && (
+        <EditFoodModal
+          item={editingFood}
+          onClose={() => setEditingFood(null)}
+          onSaved={() => {
+            setEditingFood(null)
             fetchMeals()
           }}
         />

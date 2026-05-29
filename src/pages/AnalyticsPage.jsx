@@ -39,6 +39,23 @@ const TOOLTIP_STYLE = {
   labelStyle: { color: '#A8FF3E', fontSize: '11px', fontWeight: 600 },
 }
 
+// Titre d'axe Y (vertical). side: 'left' (par défaut) ou 'right' pour un double axe.
+function yAxisLabel(value, color = '#8A8E88', side = 'left') {
+  return {
+    value,
+    angle: side === 'left' ? -90 : 90,
+    position: side === 'left' ? 'insideLeft' : 'insideRight',
+    style: {
+      fill: color,
+      fontFamily: "'Barlow Condensed', sans-serif",
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '0.08em',
+      textAnchor: 'middle',
+    },
+  }
+}
+
 // ─── dropdown custom ────────────────────────────────────────────────────────
 
 function ExerciseDropdown({ options, value, onChange }) {
@@ -63,8 +80,7 @@ function ExerciseDropdown({ options, value, onChange }) {
         <span style={{ ...dd.chevron, transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </button>
       {open && (
-        <div className="dd-menu-scroll" style={dd.menu}>
-          <style>{`.dd-menu-scroll::-webkit-scrollbar{display:none}`}</style>
+        <div style={dd.menu}>
           {options.map(name => {
             const active = name === value
             return (
@@ -99,7 +115,6 @@ const dd = {
     position: 'absolute', top: 'calc(100% + 4px)', right: 0, left: 0, zIndex: 20,
     background: '#161917', border: '1px solid #252924', borderRadius: '8px',
     padding: '4px', maxHeight: '172px', overflowY: 'auto',
-    scrollbarWidth: 'none', msOverflowStyle: 'none',
     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
   },
   item: {
@@ -377,11 +392,11 @@ export default function AnalyticsPage() {
                     />
                   </div>
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={exerciseStats[selectedExercise] ?? []} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                    <LineChart data={exerciseStats[selectedExercise] ?? []} margin={{ top: 20, right: 18, left: 8, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="0" stroke="transparent" vertical={false} />
                       <XAxis dataKey="date" stroke="#555" fontSize={12} />
-                      <YAxis yAxisId="weight" stroke="#555" fontSize={12} />
-                      <YAxis yAxisId="reps" orientation="right" stroke="#555" fontSize={12} />
+                      <YAxis yAxisId="weight" stroke="#555" fontSize={12} label={yAxisLabel('POIDS (KG)', '#A8FF3E', 'left')} />
+                      <YAxis yAxisId="reps" orientation="right" stroke="#555" fontSize={12} label={yAxisLabel('REPS', '#3EE0FF', 'right')} />
                       <Tooltip {...TOOLTIP_STYLE} cursor={{ stroke: 'rgba(168, 255, 62, 0.1)', strokeWidth: 1 }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line yAxisId="weight" type="linear" dataKey="weight" name="Poids (kg)" stroke="#A8FF3E" strokeWidth={2.5} dot={{ fill: '#A8FF3E', r: 4 }} activeDot={{ r: 5 }} isAnimationActive={false} />
@@ -395,10 +410,10 @@ export default function AnalyticsPage() {
               <div style={s.card}>
                 <h3 style={s.cardTitle}>Séances par semaine</h3>
                 <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={workoutData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                  <LineChart data={workoutData} margin={{ top: 20, right: 10, left: 8, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="0" stroke="transparent" vertical={false} />
                     <XAxis dataKey="week" stroke="#555" fontSize={12} />
-                    <YAxis stroke="#555" fontSize={12} />
+                    <YAxis stroke="#555" fontSize={12} allowDecimals={false} label={yAxisLabel('SÉANCES', '#A8FF3E', 'left')} />
                     <Tooltip {...TOOLTIP_STYLE} cursor={{ stroke: 'rgba(168, 255, 62, 0.1)', strokeWidth: 1 }} />
                     <Line type="linear" dataKey="count" name="Séances" stroke="#A8FF3E" strokeWidth={2.5} dot={{ fill: '#A8FF3E', r: 4 }} activeDot={{ r: 5 }} isAnimationActive={false} />
                   </LineChart>
@@ -453,13 +468,15 @@ export default function AnalyticsPage() {
                 <div style={s.cardFull}>
                   <h3 style={s.cardTitle}>Tendances nutritionnelles (28 derniers jours)</h3>
                   <ResponsiveContainer width="100%" height={280}>
-                    <AreaChart data={nutritionData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={nutritionData} margin={{ top: 20, right: 18, left: 8, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="0" stroke="transparent" vertical={false} />
                       <XAxis dataKey="date" stroke="#555" fontSize={12} />
-                      <YAxis stroke="#555" fontSize={12} />
+                      <YAxis yAxisId="cal" stroke="#555" fontSize={12} label={yAxisLabel('CALORIES (KCAL)', '#A8FF3E', 'left')} />
+                      <YAxis yAxisId="prot" orientation="right" stroke="#555" fontSize={12} label={yAxisLabel('PROTÉINES (G)', '#3EE0FF', 'right')} />
                       <Tooltip {...TOOLTIP_STYLE} />
-                      <Area type="monotone" dataKey="calories" name="Calories" fill="#A8FF3E" stroke="#A8FF3E" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
-                      <Area type="monotone" dataKey="protein" name="Protéines (g)" fill="#3EE0FF" stroke="#3EE0FF" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Area yAxisId="cal" type="monotone" dataKey="calories" name="Calories" fill="#A8FF3E" stroke="#A8FF3E" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
+                      <Area yAxisId="prot" type="monotone" dataKey="protein" name="Protéines (g)" fill="#3EE0FF" stroke="#3EE0FF" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -508,11 +525,23 @@ export default function AnalyticsPage() {
                 <div style={s.card}>
                   <h3 style={s.cardTitle}>Calories par type de repas (28 jours)</h3>
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={mealCalData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                    <BarChart data={mealCalData} margin={{ top: 20, right: 10, left: 8, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="0" stroke="transparent" vertical={false} />
                       <XAxis dataKey="name" stroke="#555" fontSize={11} />
-                      <YAxis stroke="#555" fontSize={12} />
-                      <Tooltip {...TOOLTIP_STYLE} cursor={false} formatter={(v) => [`${v} kcal`, 'Calories']} />
+                      <YAxis stroke="#555" fontSize={12} label={yAxisLabel('CALORIES (KCAL)', '#8A8E88', 'left')} />
+                      <Tooltip
+                        cursor={false}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null
+                          const d = payload[0].payload
+                          return (
+                            <div style={TOOLTIP_STYLE.contentStyle}>
+                              <div style={{ ...TOOLTIP_STYLE.labelStyle, marginBottom: 2 }}>{d.name}</div>
+                              <div style={{ color: d.color, fontWeight: 700 }}>{d.calories} kcal</div>
+                            </div>
+                          )
+                        }}
+                      />
                       <Bar dataKey="calories" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                         {mealCalData.map((entry, index) => (
                           <Cell key={`mc-${index}`} fill={entry.color} />

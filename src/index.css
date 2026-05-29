@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+/* Fond global — évite tout fond clair derrière la scrollbar de la page */
+html, body {
+  background-color: #0D0F0E;
+}
+
+/* Scrollbars — style unifié pour tout le projet (fin, discret, moderne) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #21251F transparent;
+}
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #21251F;
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #2F342C;
+}
+
+/* Conteneurs sans scrollbar (ex. modale "Ajouter un aliment") */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Champs number sans flèches natives (steppers custom — NumberStepper) */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spin {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

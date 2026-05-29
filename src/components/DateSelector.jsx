@@ -19,6 +19,25 @@ const s = {
     letterSpacing: '0.05em',
     flexShrink: 0,
   },
+  todayBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    background: '#0D0F0E',
+    border: '1px solid #252924',
+    borderRadius: '6px',
+    padding: '10px 14px',
+    color: '#A8FF3E',
+    fontSize: '12px',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
   yearSelect: {
     background: '#0D0F0E',
     border: '1px solid #252924',
@@ -106,9 +125,6 @@ const s = {
     overflowY: 'hidden',
     scrollBehavior: 'smooth',
     flex: 1,
-    paddingBottom: '4px',
-    msOverflowStyle: 'none',
-    scrollbarWidth: 'none',
   },
   dayItem: {
     background: '#0D0F0E',
@@ -159,7 +175,6 @@ const yd = {
     position: 'absolute', top: 'calc(100% + 4px)', right: 0, left: 0, zIndex: 30,
     background: '#161917', border: '1px solid #252924', borderRadius: '8px',
     padding: '4px', maxHeight: '188px', overflowY: 'auto',
-    scrollbarWidth: 'none', msOverflowStyle: 'none',
     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
   },
   item: {
@@ -193,8 +208,7 @@ function YearDropdown({ options, value, onChange }) {
         <span style={{ ...yd.chevron, transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </button>
       {open && (
-        <div className="yd-menu-scroll" style={yd.menu}>
-          <style>{`.yd-menu-scroll::-webkit-scrollbar{display:none}`}</style>
+        <div style={yd.menu}>
           {options.map(year => {
             const active = year === value
             return (
@@ -218,6 +232,7 @@ function YearDropdown({ options, value, onChange }) {
 export default function DateSelector({ selectedDate, onDateChange, daysWithMeals = new Set() }) {
   const [hoveredMonth, setHoveredMonth] = useState(null)
   const [hoveredDay, setHoveredDay] = useState(null)
+  const [todayPop, setTodayPop] = useState(0)
   const dayRef = useRef(null)
   const selectedDateObj = new Date(selectedDate)
 
@@ -299,6 +314,15 @@ export default function DateSelector({ selectedDate, onDateChange, daysWithMeals
 
   return (
     <div style={s.container}>
+      <style>{`
+        @keyframes todayPop {
+          0% { transform: scale(1); }
+          35% { transform: scale(0.88); }
+          70% { transform: scale(1.06); }
+          100% { transform: scale(1); }
+        }
+        .today-pop { animation: todayPop 0.32s ease; }
+      `}</style>
       {/* Année */}
       <div style={s.yearSection}>
         <label style={s.yearLabel}>Année</label>
@@ -307,6 +331,17 @@ export default function DateSelector({ selectedDate, onDateChange, daysWithMeals
           value={selectedDateObj.getFullYear()}
           onChange={handleSelectYear}
         />
+        <button
+          key={todayPop}
+          className={todayPop > 0 ? 'today-pop' : ''}
+          style={s.todayBtn}
+          onClick={() => { setTodayPop(p => p + 1); onDateChange(formatDate(new Date())) }}
+          title="Revenir à aujourd'hui"
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#A8FF3E'; e.currentTarget.style.background = '#A8FF3E14' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#252924'; e.currentTarget.style.background = '#0D0F0E' }}
+        >
+          Aujourd'hui
+        </button>
       </div>
 
       {/* Mois */}
@@ -350,7 +385,7 @@ export default function DateSelector({ selectedDate, onDateChange, daysWithMeals
           ←
         </button>
 
-        <div style={s.scrollContainer} ref={dayRef}>
+        <div className="no-scrollbar" style={s.scrollContainer} ref={dayRef}>
           {getDaysList().map((date) => {
             const dateStr = formatDate(date)
             const isSelected = dateStr === selectedDate

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import ExerciseSelector from './ExerciseSelector'
+import NumberStepper from './NumberStepper'
 import { getMuscleColor } from '../lib/muscleColors'
 
 const TYPE_LABELS = {
@@ -61,24 +62,23 @@ const s = {
   modal: {
     background: '#161917', border: '1px solid #252924', borderRadius: '12px',
     width: '100%', maxWidth: '580px', maxHeight: '90vh', overflowY: 'auto',
-    padding: '1.75rem', fontFamily: "'DM Sans', sans-serif",
+    padding: '1.25rem 1.5rem', fontFamily: "'DM Sans', sans-serif",
   },
-  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' },
-  modalTitle: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.6rem', fontWeight: 700, color: '#F0F0EE', textTransform: 'uppercase', margin: 0 },
+  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' },
+  modalTitle: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.5rem', fontWeight: 700, color: '#F0F0EE', textTransform: 'uppercase', margin: 0 },
   closeBtn: { background: 'transparent', border: 'none', color: '#6B7068', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: '4px' },
-  label: { display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7068', marginBottom: '6px' },
-  input: { width: '100%', background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '10px 14px', color: '#F0F0EE', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", outline: 'none', boxSizing: 'border-box' },
-  divider: { border: 'none', borderTop: '1px solid #1E2320', margin: '1.25rem 0' },
-  sectionTitle: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.1rem', fontWeight: 700, textTransform: 'uppercase', color: '#F0F0EE', margin: '0 0 1rem' },
-  setRow: { background: '#0D0F0E', border: '1px solid #1E2320', borderRadius: '8px', padding: '12px 14px', marginBottom: '10px' },
-  setHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
+  label: { display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7068', marginBottom: '5px' },
+  input: { width: '100%', background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '8px 12px', color: '#F0F0EE', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", outline: 'none', boxSizing: 'border-box' },
+  divider: { border: 'none', borderTop: '1px solid #1E2320', margin: '0.9rem 0' },
+  sectionTitle: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.1rem', fontWeight: 700, textTransform: 'uppercase', color: '#F0F0EE', margin: '0 0 0.75rem' },
+  setRow: { background: '#0D0F0E', border: '1px solid #1E2320', borderRadius: '8px', padding: '10px 12px', marginBottom: '8px' },
+  setHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' },
   setNum: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '13px', fontWeight: 700, color: '#A8FF3E', letterSpacing: '0.05em', textTransform: 'uppercase' },
   removeBtn: { background: 'transparent', border: 'none', color: '#3A3E38', cursor: 'pointer', fontSize: '14px', padding: '2px', transition: 'color 0.15s' },
   selectedInfo: { background: '#161917', border: '1px solid #252924', borderRadius: '6px', padding: '8px 12px', marginTop: '8px' },
-  numInput: { width: '100%', background: '#161917', border: '1px solid #252924', borderRadius: '5px', padding: '7px 10px', color: '#F0F0EE', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", outline: 'none', boxSizing: 'border-box' },
   fieldLabel: { fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#4A4E48', display: 'block', marginBottom: '4px' },
   addSetBtn: { display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: '1px dashed #252924', borderRadius: '6px', padding: '8px 14px', color: '#6B7068', cursor: 'pointer', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", width: '100%', justifyContent: 'center', transition: 'border-color 0.15s' },
-  footer: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '1.5rem' },
+  footer: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '1rem' },
   cancelBtn: { background: 'transparent', border: '1px solid #252924', borderRadius: '6px', padding: '10px 20px', color: '#6B7068', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '1rem', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' },
   saveBtn: { background: '#A8FF3E', border: 'none', borderRadius: '6px', padding: '10px 24px', color: '#0D0F0E', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: '1rem', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' },
   error: { background: '#2A1515', border: '1px solid #4A2020', borderRadius: '6px', padding: '10px 14px', color: '#FF7070', fontSize: '13px', marginBottom: '1rem' },
@@ -169,7 +169,7 @@ export default function CreateWorkoutModal({ onClose, onCreated, workout }) {
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={s.modal}>
+      <div className="no-scrollbar" style={s.modal}>
         <div style={s.modalHeader}>
           <h2 style={s.modalTitle}>{isEdit ? 'Modifier la séance' : 'Nouvelle séance'}</h2>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
@@ -177,12 +177,12 @@ export default function CreateWorkoutModal({ onClose, onCreated, workout }) {
 
         {error && <div style={s.error}>{error}</div>}
 
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ marginBottom: '0.9rem' }}>
           <label style={s.label}>Titre *</label>
           <input style={s.input} placeholder="ex : Push Day, Full Body…" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '0.9rem' }}>
           <div>
             <label style={s.label}>Date</label>
             <input type="date" style={s.input} value={date} onChange={e => setDate(e.target.value)} />
@@ -284,11 +284,11 @@ export default function CreateWorkoutModal({ onClose, onCreated, workout }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div>
                 <label style={s.fieldLabel}>Reps *</label>
-                <input type="number" min="1" placeholder="10" style={s.numInput} value={set.reps} onChange={e => updateSet(i, 'reps', e.target.value)} />
+                <NumberStepper value={set.reps} onChange={v => updateSet(i, 'reps', v)} step={1} min={1} placeholder="10" />
               </div>
               <div>
                 <label style={s.fieldLabel}>Poids (kg)</label>
-                <input type="number" min="0" step="0.5" placeholder="60" style={s.numInput} value={set.weight_kg} onChange={e => updateSet(i, 'weight_kg', e.target.value)} />
+                <NumberStepper value={set.weight_kg} onChange={v => updateSet(i, 'weight_kg', v)} step={2.5} min={0} placeholder="60" />
               </div>
             </div>
           </div>

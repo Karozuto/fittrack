@@ -36,6 +36,8 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 Routes are declared in `src/App.jsx`. `/`, `/workouts`, `/nutrition`, and `/analytics` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component. The navbar links live in `src/components/Navbar.jsx` (the Analytics link is labelled "Analyse").
 
+The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the active tab with `useLocation()` and renders it as a green pill (`#A8FF3E` text on `rgba(168,255,62,0.1)`); thin vertical separators sit between tabs; the `FITTRACK` logo is clickable and navigates to `/`.
+
 ### Data access
 
 All Supabase queries run directly inside page/component files via the singleton client exported from `src/lib/supabase.js`. There is no service layer or custom hook abstraction — components call `supabase.from(...)` inline.
@@ -62,6 +64,8 @@ Typography: **Barlow Condensed** (headings, badges, buttons) and **DM Sans** (bo
 
 Muscle groups in `WorkoutCard` have a colour map (`MUSCLE_COLOR_MAP`) used to tint badges and dot indicators per muscle group.
 
+All numeric inputs use the reusable **`NumberStepper`** (`src/components/NumberStepper.jsx`): an input with discreet +/− buttons stacked on the right (+ top, − bottom). Native spinner arrows are hidden by a scoped `.no-spin` class in `src/index.css` (scoped so other inputs keep their arrows). Quantity fields default to empty (no prefilled `100`).
+
 ## Nutrition Feature
 
 Fully implemented daily meal tracking with OpenFoodFacts integration, multiple input methods, and ergonomic UI.
@@ -70,7 +74,7 @@ Fully implemented daily meal tracking with OpenFoodFacts integration, multiple i
 
 - **NutritionPage** (`src/pages/NutritionPage.jsx`): Main page with date selector, daily summary card (calories/macros), and meal sections grouped by type
 - **DateSelector** (`src/components/DateSelector.jsx`): Calendar with year dropdown, 12-month grid, day scroller; days with meals highlighted (green border, darker bg)
-- **MealSection** (`src/components/MealSection.jsx`): Lists meals grouped by type (Petit-déjeuner, Déjeuner, Encas, Dîner) with per-item and section totals; delete functionality
+- **MealSection** (`src/components/MealSection.jsx`): Lists meals grouped by type (Petit-déjeuner, Déjeuner, Encas, Dîner) with per-item and section totals; delete functionality. **Collapsible** (collapsed by default) like `WorkoutCard` — the food list collapses while the per-type macro recap stays always visible below it.
 - **CreateMealModal** (`src/components/CreateMealModal.jsx`): Three-tab modal for adding meals: Recherche (search), Code-barre (barcode), Manuel (manual entry)
 
 ### Input Methods

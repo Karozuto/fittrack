@@ -36,10 +36,6 @@ function formatDate(iso) {
   return d.toLocaleDateString('fr-FR', { weekday: 'long' })
 }
 
-function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
 function todayLabel() {
   return new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -210,7 +206,7 @@ export default function Dashboard() {
                 <div key={m.id} style={s.row}>
                   <div>
                     <p style={s.rowTitle}>{m.name}</p>
-                    <p style={s.rowMeta}>{formatTime(m.eaten_at)}</p>
+                    <p style={s.rowMeta}>{m.type}</p>
                   </div>
                   <span style={{ ...s.badge, color: '#A8FF3E', borderColor: 'rgba(168,255,62,0.15)' }}>
                     {mealKcal(m)} kcal

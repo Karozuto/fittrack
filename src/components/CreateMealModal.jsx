@@ -1,8 +1,19 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import NumberStepper from './NumberStepper'
 
 const MEAL_TYPES = ['Petit-déjeuner', 'Déjeuner', 'Encas', 'Dîner']
+
+// Déduit l'unité (g / ml) d'un produit OpenFoodFacts (les liquides → ml).
+function detectUnit(product) {
+  const u = (product?.product_quantity_unit || product?.serving_quantity_unit || '').toLowerCase()
+  if (u === 'ml' || u === 'cl' || u === 'l') return 'ml'
+  if (u === 'g' || u === 'kg' || u === 'mg') return 'g'
+  const q = (product?.quantity || '').toLowerCase()
+  if (/(\d\s*)(ml|cl|l|litre|liter)\b/.test(q)) return 'ml'
+  return 'g'
+}
 
 const s = {
   overlay: {
@@ -23,18 +34,18 @@ const s = {
     maxWidth: '600px',
     maxHeight: '90vh',
     overflowY: 'auto',
-    padding: '1.75rem',
+    padding: '1.25rem 1.5rem',
     fontFamily: "'DM Sans', sans-serif",
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '1.5rem',
+    marginBottom: '1rem',
   },
   title: {
     fontFamily: "'Barlow Condensed', sans-serif",
-    fontSize: '1.6rem',
+    fontSize: '1.5rem',
     fontWeight: 700,
     color: '#F0F0EE',
     textTransform: 'uppercase',
@@ -52,7 +63,7 @@ const s = {
   tabs: {
     display: 'flex',
     gap: '8px',
-    marginBottom: '1.5rem',
+    marginBottom: '1rem',
     borderBottom: '1px solid #252924',
   },
   tab: {
@@ -84,7 +95,7 @@ const s = {
     fontFamily: "'DM Sans', sans-serif",
     outline: 'none',
     boxSizing: 'border-box',
-    marginBottom: '1rem',
+    marginBottom: '0.75rem',
   },
   button: {
     background: '#A8FF3E',
@@ -149,7 +160,7 @@ const s = {
     border: '1px solid #252924',
     borderRadius: '6px',
     padding: '1rem',
-    marginBottom: '1.5rem',
+    marginBottom: '1rem',
     display: 'flex',
     gap: '1rem',
     alignItems: 'flex-start',
@@ -180,7 +191,7 @@ const s = {
     color: '#8A8E88',
   },
   formField: {
-    marginBottom: '1rem',
+    marginBottom: '0.75rem',
   },
   label: {
     display: 'block',
@@ -284,7 +295,7 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
   const [results, setResults] = useState([])
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [mealType, setMealType] = useState(MEAL_TYPES[0])
-  const [quantity, setQuantity] = useState('100')
+  const [quantity, setQuantity] = useState('')
   const [quantityUnit, setQuantityUnit] = useState('g')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -294,7 +305,7 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
   const [manualProtein, setManualProtein] = useState('')
   const [manualCarbs, setManualCarbs] = useState('')
   const [manualFat, setManualFat] = useState('')
-  const [manualQuantity, setManualQuantity] = useState('100')
+  const [manualQuantity, setManualQuantity] = useState('')
   const [manualUnit, setManualUnit] = useState('g')
 
   async function searchOpenfoodFacts() {
@@ -340,12 +351,13 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
 
   function selectProduct(product) {
     setSelectedProduct(product)
-    setQuantity('100')
+    setQuantity('')
+    setQuantityUnit(detectUnit(product))
   }
 
   function calculateMacros() {
     if (!selectedProduct) return { cal: 0, prot: 0, carbs: 0, fat: 0 }
-    const qtyNum = parseFloat(quantity) || 100
+    const qtyNum = parseFloat(quantity) || 0
     const energy = selectedProduct.nutriments?.['energy-kcal_100g'] || 0
     const cal = energy * (qtyNum / 100)
     const prot = (selectedProduct.nutriments?.proteins_100g || 0) * (qtyNum / 100)
@@ -389,6 +401,57 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
         protein_g: Math.round(macros.prot * 10) / 10,
         carbohydrates_g: Math.round(macros.carbs * 10) / 10,
         fat_g: Math.round(macros.fat * 10) / 10,
+        quantity_g: parseFloat(quantity) || null,
+        quantity_unit: quantityUnit,
+      })
+
+      if (foodErr) throw foodErr
+      onCreated()
+    } catch (e) {
+      setError(e.message)
+      setSaving(false)
+    }
+  }
+
+  async function saveManual() {
+    if (!manualName.trim()) {
+      setError('Entre un nom pour l\'aliment')
+      return
+    }
+    setSaving(true)
+    setError('')
+    try {
+      const qtyNum = parseFloat(manualQuantity) || 0
+      const factor = qtyNum / 100
+      const cal = (parseFloat(manualCalories) || 0) * factor
+      const prot = (parseFloat(manualProtein) || 0) * factor
+      const carbs = (parseFloat(manualCarbs) || 0) * factor
+      const fat = (parseFloat(manualFat) || 0) * factor
+      const mealDate = new Date(`${selectedDate}T12:00:00`)
+
+      const { data: meal, error: mealErr } = await supabase
+        .from('meals')
+        .insert({
+          user_id: user.id,
+          type: mealType,
+          name: manualName.trim(),
+          eaten_at: mealDate.toISOString(),
+        })
+        .select('id')
+        .single()
+
+      if (mealErr) throw mealErr
+
+      const { error: foodErr } = await supabase.from('food_items').insert({
+        meal_id: meal.id,
+        name: manualName.trim(),
+        product_name: manualName.trim(),
+        calories: Math.round(cal),
+        protein_g: Math.round(prot * 10) / 10,
+        carbohydrates_g: Math.round(carbs * 10) / 10,
+        fat_g: Math.round(fat * 10) / 10,
+        quantity_g: parseFloat(manualQuantity) || null,
+        quantity_unit: manualUnit,
       })
 
       if (foodErr) throw foodErr
@@ -403,7 +466,7 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={s.modal}>
+      <div className="no-scrollbar" style={s.modal}>
         <div style={s.header}>
           <h2 style={s.title}>Ajouter un aliment</h2>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
@@ -523,105 +586,73 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
                   <div style={s.formField}>
                     <label style={{ ...s.label, fontSize: '9px' }}>Calories</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      style={s.numberInput}
-                      value={manualCalories}
-                      onChange={e => setManualCalories(e.target.value)}
-                      placeholder="0"
-                    />
+                    <NumberStepper value={manualCalories} onChange={setManualCalories} step={10} />
                   </div>
                   <div style={s.formField}>
                     <label style={{ ...s.label, fontSize: '9px' }}>Protéines (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      style={s.numberInput}
-                      value={manualProtein}
-                      onChange={e => setManualProtein(e.target.value)}
-                      placeholder="0"
-                    />
+                    <NumberStepper value={manualProtein} onChange={setManualProtein} step={1} />
                   </div>
                   <div style={s.formField}>
                     <label style={{ ...s.label, fontSize: '9px' }}>Glucides (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      style={s.numberInput}
-                      value={manualCarbs}
-                      onChange={e => setManualCarbs(e.target.value)}
-                      placeholder="0"
-                    />
+                    <NumberStepper value={manualCarbs} onChange={setManualCarbs} step={1} />
                   </div>
                   <div style={s.formField}>
                     <label style={{ ...s.label, fontSize: '9px' }}>Lipides (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      style={s.numberInput}
-                      value={manualFat}
-                      onChange={e => setManualFat(e.target.value)}
-                      placeholder="0"
-                    />
+                    <NumberStepper value={manualFat} onChange={setManualFat} step={1} />
                   </div>
                 </div>
 
-                <div style={s.formField}>
-                  <label style={s.label}>Quantité</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      step="10"
-                      style={{ ...s.numberInput, flex: 1 }}
-                      value={manualQuantity}
-                      onChange={e => setManualQuantity(e.target.value)}
-                      placeholder="100"
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div style={s.formField}>
+                    <label style={s.label}>Repas</label>
                     <select
-                      style={{ ...s.select, width: '80px' }}
-                      value={manualUnit}
-                      onChange={e => setManualUnit(e.target.value)}
+                      style={s.select}
+                      value={mealType}
+                      onChange={e => setMealType(e.target.value)}
                     >
-                      <option value="g">g</option>
-                      <option value="ml">ml</option>
+                      {MEAL_TYPES.map(type => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
                     </select>
+                  </div>
+
+                  <div style={s.formField}>
+                    <label style={s.label}>Quantité</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <NumberStepper
+                        value={manualQuantity}
+                        onChange={setManualQuantity}
+                        step={manualUnit === 'unité' ? 1 : 10}
+                        placeholder="100"
+                      />
+                      <select
+                        style={{ ...s.select, width: '90px' }}
+                        value={manualUnit}
+                        onChange={e => setManualUnit(e.target.value)}
+                      >
+                        <option value="g">g</option>
+                        <option value="ml">ml</option>
+                        <option value="unité">unités</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 <button
-                  style={{ ...s.button, width: '100%' }}
-                  onClick={() => {
-                    if (!manualName.trim()) {
-                      setError('Entre un nom pour l\'aliment')
-                      return
-                    }
-                    const manualProduct = {
-                      product_name: manualName,
-                      nutriments: {
-                        energy_kcal_100g: parseFloat(manualCalories) || 0,
-                        proteins_100g: parseFloat(manualProtein) || 0,
-                        carbohydrates_100g: parseFloat(manualCarbs) || 0,
-                        fat_100g: parseFloat(manualFat) || 0,
-                      },
-                    }
-                    selectProduct(manualProduct)
-                    setQuantity(manualQuantity)
-                  }}
+                  style={{ ...s.button, width: '100%', opacity: saving ? 0.6 : 1 }}
+                  onClick={saveManual}
+                  disabled={saving}
                 >
-                  Utiliser cet aliment
+                  {saving ? 'Ajout...' : 'Ajouter l\'aliment'}
                 </button>
               </div>
             )}
           </>
         ) : (
           <>
-            <div style={{ ...s.selectedProduct, display: 'grid', gridTemplateColumns: '130px 1fr', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'stretch' }}>
+            <div style={{ ...s.selectedProduct, display: 'grid', gridTemplateColumns: '130px 1fr', gap: '1.5rem', marginBottom: '1rem', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', justifyContent: 'space-between' }}>
                 {selectedProduct.image_front_url && (
                   <img src={selectedProduct.image_front_url} alt={selectedProduct.product_name} style={{ ...s.selectedProductImage, width: '130px', height: '130px', maxWidth: 'none', maxHeight: 'none' }} />
@@ -677,22 +708,20 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
               <div style={s.formField}>
                 <label style={s.label}>Quantité</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="number"
-                    min="0"
-                    step="10"
-                    style={{ ...s.numberInput, flex: 1 }}
+                  <NumberStepper
                     value={quantity}
-                    onChange={e => setQuantity(e.target.value)}
+                    onChange={setQuantity}
+                    step={quantityUnit === 'unité' ? 1 : 10}
                     placeholder="100"
                   />
                   <select
-                    style={{ ...s.select, width: '80px' }}
+                    style={{ ...s.select, width: '90px' }}
                     value={quantityUnit}
                     onChange={e => setQuantityUnit(e.target.value)}
                   >
                     <option value="g">g</option>
                     <option value="ml">ml</option>
+                    {selectedProduct.manual && <option value="unité">unités</option>}
                   </select>
                 </div>
               </div>
