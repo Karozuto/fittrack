@@ -42,17 +42,20 @@ The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the 
 
 All Supabase queries run directly inside page/component files via the singleton client exported from `src/lib/supabase.js`. There is no service layer or custom hook abstraction — components call `supabase.from(...)` inline.
 
-### Database schema (inferred)
+### Database schema
 
 | Table | Key columns |
 |---|---|
-| `workouts` | `id`, `user_id`, `name`, `notes`, `performed_at`, `duration_min` |
-| `workout_sets` | `id`, `workout_id`, `exercise_id`, `set_number`, `reps`, `weight_kg` |
-| `exercises` | `id`, `name`, `exercise_type`, `muscle_groups` (text array) |
-| `meals` | `id`, `user_id`, `name`, `eaten_at` |
-| `food_items` | `calories`, `protein_g` (joined via `meals` → `food_items(*)`) |
+| `profiles` | `id` (→ `auth.users`), `username`, `age`, `weight`, `height`, `goal`, `created_at` |
+| `workouts` | `id`, `user_id`, `name`, `notes`, `performed_at`, `duration_min`, `created_at` |
+| `workout_sets` | `id`, `workout_id`, `exercise_id`, `set_number`, `reps`, `weight_kg`, `created_at` |
+| `exercises` | `id`, `name`, `description`, `exercise_type`, `muscle_groups` (text array), `created_at` |
+| `meals` | `id`, `user_id`, `name`, `type` (NOT NULL, default `'Déjeuner'`), `eaten_at`, `created_at` |
+| `food_items` | `id`, `meal_id`, `name`, `product_name`, `barcode`, `quantity_g`, `quantity_unit`, `calories`, `protein_g`, `carbohydrates_g`, `fat_g`, `created_at` |
 
-Row-level security is expected on `workouts` and `meals` (queries always filter by `user_id`).
+All macro columns (`calories`, `protein_g`, `carbohydrates_g`, `fat_g`) are `real`. RLS is enabled on every `public` table; user-scoped tables (`workouts`, `meals`, `profiles`) filter by `user_id`/`id`.
+
+> The schema was cleaned up: dropped dead/unused columns `food_items.carbs_g` (duplicate of `carbohydrates_g`), `workout_sets.duration_s`, `workout_sets.notes`, `meals.notes`, `exercises.primary_muscles`, `exercises.secondary_muscles`. The app only ever used `muscle_groups`. SECURITY DEFINER functions (`handle_new_user`, `rls_auto_enable`, `replace_in_array`) were hardened: fixed `search_path` and revoked `EXECUTE` from `anon`/`authenticated`/`public` (triggers still run). The only remaining security advisor is *Leaked Password Protection* — a Supabase Auth dashboard toggle, not fixable via SQL.
 
 ### Styling
 
