@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import WorkoutCard from '../components/WorkoutCard'
@@ -76,6 +77,14 @@ const s = {
     display: 'grid',
     gap: '10px',
   },
+  cardWrap: {
+    borderRadius: '8px',
+    scrollMarginTop: '70px',
+    transition: 'box-shadow 0.3s ease',
+  },
+  cardWrapHi: {
+    boxShadow: '0 0 0 2px #A8FF3E',
+  },
   loadingRow: {
     display: 'flex',
     gap: '10px',
@@ -92,16 +101,31 @@ const s = {
 
 export default function WorkoutsPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const focusId = location.state?.focusId
   const [workouts, setWorkouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingWorkout, setEditingWorkout] = useState(null)
   const [btnHover, setBtnHover] = useState(false)
+  const [highlightId, setHighlightId] = useState(null)
 
   useEffect(() => {
     fetchWorkouts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Mise en avant + scroll vers une séance ciblée depuis l'accueil.
+  useEffect(() => {
+    if (!focusId || loading) return
+    const el = document.getElementById(`workout-${focusId}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHighlightId(focusId)
+    const t = setTimeout(() => setHighlightId(null), 2200)
+    return () => clearTimeout(t)
+  }, [focusId, loading])
 
   async function fetchWorkouts() {
     setLoading(true)
@@ -201,12 +225,17 @@ export default function WorkoutsPage() {
         ) : (
           <div style={s.grid}>
             {workouts.map(workout => (
-              <WorkoutCard
+              <div
                 key={workout.id}
-                workout={workout}
-                onDeleted={handleWorkoutDeleted}
-                onEdit={handleEdit}
-              />
+                id={`workout-${workout.id}`}
+                style={{ ...s.cardWrap, ...(highlightId === workout.id ? s.cardWrapHi : {}) }}
+              >
+                <WorkoutCard
+                  workout={workout}
+                  onDeleted={handleWorkoutDeleted}
+                  onEdit={handleEdit}
+                />
+              </div>
             ))}
           </div>
         )}

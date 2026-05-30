@@ -28,6 +28,15 @@ const ACTIVITIES = [
 
 const GOAL_FACTOR = { perte: 0.85, maintien: 1, prise: 1.1 }
 
+// Position = centre de chaque zone de la jauge IMC (15–40 mappé sur 0–100 %) :
+// Maigreur 0–14 %, Normal 14–40 %, Surpoids 40–60 %, Obésité 60–100 %.
+const BMI_ZONES = [
+  { label: 'Maigreur', pos: 7, color: '#3EE0FF' },
+  { label: 'Normal', pos: 27, color: '#A8FF3E' },
+  { label: 'Surpoids', pos: 50, color: '#FFD93E' },
+  { label: 'Obésité', pos: 80, color: '#FF5757' },
+]
+
 // BMR Mifflin-St Jeor → cibles macros. Renvoie null si données insuffisantes.
 function computeTargets({ sex, age, weight, height, goal, activity }) {
   const a = parseFloat(age)
@@ -52,6 +61,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [activity, setActivity] = useState(1.55)
+  const [calcPop, setCalcPop] = useState(0)
 
   const [form, setForm] = useState({
     username: '', sex: '', age: '', weight: '', height: '', goal: 'maintien',
@@ -147,14 +157,28 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  // IMC dérivé
+  // IMC + valeurs dérivées
   const w = parseFloat(form.weight)
   const h = parseFloat(form.height)
   const bmi = w && h ? w / Math.pow(h / 100, 2) : null
+  const bmiCat = bmi ? bmiCategory(bmi) : null
+  const bmiPct = bmi ? Math.max(0, Math.min(100, ((bmi - 15) / 25) * 100)) : 0
+  const healthyMin = h ? 18.5 * Math.pow(h / 100, 2) : null
+  const healthyMax = h ? 25 * Math.pow(h / 100, 2) : null
+  const water = w ? w * 0.035 : null // ~35 ml/kg/jour, en litres
 
   return (
     <PageLayout>
       <div>
+        <style>{`
+          @keyframes calcPop {
+            0% { transform: scale(1); }
+            35% { transform: scale(0.9); }
+            70% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+          }
+          .calc-pop { animation: calcPop 0.32s ease; }
+        `}</style>
         <PageHeader eyebrow="PROFIL" title="MES INFOS" />
 
         {error && <div style={s.error}>{error}</div>}
@@ -218,19 +242,73 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              {bmi && (
-                <p style={s.bmi}>
-                  IMC&nbsp;: <span style={s.bmiValue}>{bmi.toFixed(1)}</span>
-                  <span style={s.bmiCat}> · {bmiCategory(bmi)}</span>
-                </p>
-              )}
             </div>
+
+            {/* IMC — mis en valeur */}
+            {bmi && (
+              <div style={s.bmiCard}>
+                <div style={s.bmiTop}>
+                  <div>
+                    <p style={s.bmiCardLabel}>Indice de masse corporelle</p>
+                    <div style={s.bmiValueRow}>
+                      <span style={s.bmiBig}>{bmi.toFixed(1)}</span>
+                      <span style={{ ...s.bmiBadge, color: bmiCat.color, borderColor: bmiCat.color + '55', background: bmiCat.color + '14' }}>
+                        {bmiCat.label}
+                      </span>
+                    </div>
+                  </div>
+                  {healthyMin && (
+                    <div style={s.bmiRange}>
+                      <span style={s.bmiRangeLabel}>Poids santé</span>
+                      <span style={s.bmiRangeValue}>{healthyMin.toFixed(0)}–{healthyMax.toFixed(0)} kg</span>
+                    </div>
+                  )}
+                </div>
+                <div style={s.bmiScale}>
+                  <div style={{ ...s.bmiMarker, left: `${bmiPct}%` }} />
+                </div>
+                <div style={s.bmiTicks}>
+                  {BMI_ZONES.map(z => (
+                    <span
+                      key={z.label}
+                      style={{ ...s.bmiTick, left: `${z.pos}%`, color: z.color }}
+                    >
+                      {z.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Hydratation recommandée */}
+            {water && (
+              <div style={s.hydraCard}>
+                <span style={s.hydraIcon}>💧</span>
+                <div style={s.hydraInfo}>
+                  <span style={s.hydraLabel}>Hydratation recommandée</span>
+                  <span style={s.hydraSub}>~35 ml par kg de poids</span>
+                </div>
+                <span style={s.hydraValue}>
+                  {water.toFixed(1)}<span style={s.hydraUnit}> L/jour</span>
+                </span>
+              </div>
+            )}
 
             {/* Objectifs nutritionnels */}
             <div style={s.card}>
               <div style={s.cardHead}>
                 <h3 style={s.cardTitle}>Objectifs nutritionnels</h3>
-                <button type="button" style={s.autoBtn} onClick={autoCalc}>Calculer auto</button>
+                <button
+                  type="button"
+                  key={calcPop}
+                  className={calcPop > 0 ? 'calc-pop' : ''}
+                  style={s.autoBtn}
+                  onClick={() => { setCalcPop(p => p + 1); autoCalc() }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(168,255,62,0.1)'; e.currentTarget.style.borderColor = '#A8FF3E' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#252924' }}
+                >
+                  ⚡ Calculer auto
+                </button>
               </div>
 
               <label style={s.label}>Niveau d'activité (pour le calcul auto)</label>
@@ -281,10 +359,10 @@ export default function ProfilePage() {
 }
 
 function bmiCategory(bmi) {
-  if (bmi < 18.5) return 'Maigreur'
-  if (bmi < 25) return 'Normal'
-  if (bmi < 30) return 'Surpoids'
-  return 'Obésité'
+  if (bmi < 18.5) return { label: 'Maigreur', color: '#3EE0FF' }
+  if (bmi < 25) return { label: 'Normal', color: '#A8FF3E' }
+  if (bmi < 30) return { label: 'Surpoids', color: '#FFD93E' }
+  return { label: 'Obésité', color: '#FF5757' }
 }
 
 const s = {
@@ -309,27 +387,86 @@ const s = {
   segment: { display: 'flex', gap: '8px', marginBottom: '1rem' },
   segmentWrap: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1rem' },
   segBtn: {
-    flex: 1, background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px',
+    flex: 1, background: '#0D0F0E',
+    borderWidth: '1px', borderStyle: 'solid', borderColor: '#252924', borderRadius: '6px',
     padding: '9px 12px', color: '#8A8E88', fontSize: '13px', fontFamily: "'DM Sans', sans-serif",
-    cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+    cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', outline: 'none',
   },
   segBtnSm: {
-    background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px',
+    background: '#0D0F0E',
+    borderWidth: '1px', borderStyle: 'solid', borderColor: '#252924', borderRadius: '6px',
     padding: '7px 12px', color: '#8A8E88', fontSize: '12px', fontFamily: "'DM Sans', sans-serif",
-    cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+    cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', outline: 'none',
   },
   segBtnActive: {
     background: 'rgba(168, 255, 62, 0.1)', borderColor: '#A8FF3E', color: '#A8FF3E', fontWeight: 600,
   },
-  bmi: { fontSize: '13px', color: '#8A8E88', margin: '0.25rem 0 0' },
-  bmiValue: { fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: '#F0F0EE' },
-  bmiCat: { color: '#6B7068' },
   autoBtn: {
-    background: 'transparent', border: '1px solid #252924', borderRadius: '6px', padding: '6px 12px',
-    color: '#A8FF3E', fontSize: '12px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
+    background: 'transparent',
+    borderWidth: '1px', borderStyle: 'solid', borderColor: '#252924', borderRadius: '6px',
+    padding: '6px 12px', color: '#A8FF3E', fontSize: '12px',
+    fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700,
     letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap',
-    marginBottom: '1rem',
+    marginBottom: '1rem', outline: 'none', transition: 'background 0.15s, border-color 0.15s',
   },
+  // Carte IMC
+  bmiCard: { ...CARD_ROUNDED, padding: '1.1rem 1.25rem' },
+  bmiTop: {
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+    gap: '12px', flexWrap: 'wrap', marginBottom: '14px',
+  },
+  bmiCardLabel: {
+    fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+    color: '#6B7068', margin: '0 0 8px',
+  },
+  bmiValueRow: { display: 'flex', alignItems: 'center', gap: '12px' },
+  bmiBig: {
+    fontFamily: "'Barlow Condensed', sans-serif", fontSize: '2.1rem', fontWeight: 700,
+    color: '#F0F0EE', lineHeight: 1,
+  },
+  bmiBadge: {
+    fontFamily: "'Barlow Condensed', sans-serif", fontSize: '12px', fontWeight: 700,
+    letterSpacing: '0.05em', textTransform: 'uppercase', padding: '3px 10px',
+    borderRadius: '6px', borderWidth: '1px', borderStyle: 'solid',
+  },
+  bmiRange: { textAlign: 'right', flexShrink: 0 },
+  bmiRangeLabel: {
+    display: 'block', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
+    textTransform: 'uppercase', color: '#6B7068', marginBottom: '3px',
+  },
+  bmiRangeValue: {
+    fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.05rem', fontWeight: 700, color: '#F0F0EE',
+  },
+  bmiScale: {
+    position: 'relative', height: '8px', borderRadius: '5px',
+    background: 'linear-gradient(90deg, #3EE0FF 0 14%, #A8FF3E 14% 40%, #FFD93E 40% 60%, #FF5757 60% 100%)',
+  },
+  bmiMarker: {
+    position: 'absolute', top: '-3px', width: '3px', height: '14px', borderRadius: '2px',
+    background: '#F0F0EE', transform: 'translateX(-50%)', transition: 'left 0.3s ease',
+    boxShadow: '0 0 0 2px #0D0F0E',
+  },
+  bmiTicks: {
+    position: 'relative', height: '11px', marginTop: '7px',
+  },
+  bmiTick: {
+    position: 'absolute', transform: 'translateX(-50%)', whiteSpace: 'nowrap',
+    fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
+  },
+  // Carte hydratation
+  hydraCard: {
+    ...CARD_ROUNDED, padding: '0.85rem 1.25rem',
+    display: 'flex', alignItems: 'center', gap: '14px',
+  },
+  hydraIcon: { fontSize: '20px', flexShrink: 0 },
+  hydraInfo: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 },
+  hydraLabel: { fontSize: '13px', fontWeight: 600, color: '#F0F0EE' },
+  hydraSub: { fontSize: '11px', color: '#6B7068', marginTop: '2px' },
+  hydraValue: {
+    fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.5rem', fontWeight: 700,
+    color: '#3EE0FF', lineHeight: 1, whiteSpace: 'nowrap',
+  },
+  hydraUnit: { fontSize: '0.8rem', color: '#6B7068', fontWeight: 700 },
   actions: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' },
   savedMsg: { color: '#A8FF3E', fontSize: '13px', fontWeight: 500 },
   saveBtn: { ...BTN_PRIMARY, padding: '10px 20px' },

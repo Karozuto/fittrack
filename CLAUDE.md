@@ -36,7 +36,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 Routes are declared in `src/App.jsx`. `/`, `/workouts`, `/nutrition`, `/analytics`, and `/profile` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component. The navbar links live in `src/components/Navbar.jsx` (the Analytics link is labelled "Analyse").
 
-The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the active tab with `useLocation()` and renders it as a green pill (`#A8FF3E` text on `rgba(168,255,62,0.1)`); thin vertical separators sit between tabs; the `FITTRACK` logo is clickable and navigates to `/`. The user **email (top-right) is clickable and navigates to `/profile`** (and turns accent when active) — that's the only entry point to the profile page (it's not a main tab).
+The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the active tab with `useLocation()` and renders it as a green pill (`#A8FF3E` text on `rgba(168,255,62,0.1)`); thin vertical separators sit between tabs; the `FITTRACK` logo is clickable and navigates to `/`.
+
+On the right is a **single hamburger↔X toggle button** (`position:fixed; right:2rem; zIndex:202`, above the drawer) that opens/closes a **right-side drawer** (`Navbar.jsx`). The drawer (a full-viewport `drawerLayer` with `overflow:hidden` clips the off-screen panel so no horizontal scrollbar appears — don't use `overflow-x:hidden` on `body`, it breaks the sticky navbar). The drawer shows the account email, **Éditer le profil** (→ `/profile`), **Sécurité** (placeholder "Bientôt"), and **Se déconnecter**. `/profile` is reached via this drawer (it's not a main tab).
 
 ### Data access
 
@@ -127,15 +129,17 @@ Row-level security filters by `user_id`.
 
 ## Profile & Goals Feature
 
-Profile/settings page at `/profile` (`src/pages/ProfilePage.jsx`). Reached **only** by clicking the email in the navbar (top-right) — no main tab.
+Profile/settings page at `/profile` (`src/pages/ProfilePage.jsx`). Reached **only** via the navbar hamburger drawer → "Éditer le profil" — no main tab.
 
-- **Identity card**: `username` (text), `sex` (Homme/Femme segmented), `age`/`weight`/`height` (`NumberStepper`), `goal` (Perte/Maintien/Prise segmented). Derived **BMI** shown below (weight / height²) with a category label.
-- **Nutrition targets card**: 4 editable targets (`target_calories`, `target_protein_g`, `target_carbs_g`, `target_fat_g`). A **"Calculer auto"** button derives them from BMR (Mifflin-St Jeor) × activity factor × goal factor (`perte` 0.85 / `maintien` 1 / `prise` 1.1); protein = 2 g/kg (2.2 for `perte`), fat = 25% of kcal, carbs = remainder. The activity level selector is **transient** (not persisted — only feeds the calc).
+- **Identity card**: `username` (text), `sex` (Homme/Femme segmented), `age`/`weight`/`height` (`NumberStepper`), `goal` (Perte/Maintien/Prise segmented). Segmented buttons use **longhand borders** (`borderWidth`/`borderStyle`/`borderColor`) + `outline:none` to avoid the shorthand↔longhand stray-border bug.
+- **BMI card**: derived BMI (weight / (height/100)²) shown large with a colored category badge, a gradient gauge (`#3EE0FF`/`#A8FF3E`/`#FFD93E`/`#FF5757` zones at 14%/40%/60%) with a position marker, the four category labels (`BMI_ZONES`) absolutely positioned at their **zone centers** (7/27/50/80 %) each in its zone color + bold, and the **healthy weight range** for the height.
+- **Hydration card**: `~35 ml/kg/day` → litres/day (shown when weight is set).
+- **Nutrition targets card**: 4 editable targets (`target_calories`, `target_protein_g`, `target_carbs_g`, `target_fat_g`). A **"Calculer auto"** button (⚡, with a `calcPop` key-remount pop animation) derives them from BMR (Mifflin-St Jeor) × activity factor × goal factor (`perte` 0.85 / `maintien` 1 / `prise` 1.1); protein = 2 g/kg (2.2 for `perte`), fat = 25% of kcal, carbs = remainder. The activity level selector is **transient** (not persisted — only feeds the calc).
 - Save via `supabase.from('profiles').upsert(payload)` (the row already exists from the `handle_new_user` trigger; RLS allows id = auth.uid()).
 
 The targets feed two places:
 - **NutritionPage** summary card: each macro shows `consumed / target` with a thin progress bar (macro color, turns red `#FF5757` when over target). Falls back to plain totals when no target is set. Targets fetched inline in a `useEffect` keyed on `user`.
-- **Dashboard**: greets by `username` (fallback to email prefix); Calories and Protéines metrics show `X / target` when a target exists.
+- **Dashboard**: greets by `username` (fallback to email prefix) and has a prominent **"Objectifs du jour"** card (consumed-today vs target progress bars for calories + 3 macros; CTA to `/profile` when no target set). "Dernières séances" is capped at 3 with a `›` button that deep-links to `/workouts` (via `navigate(..., { state: { focusId } })`; the page scrolls to and highlights that card). "Derniers repas" shows the 3 most recent meals (any date, `eaten_at` desc).
 
 ## Analytics Feature
 

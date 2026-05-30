@@ -46,30 +46,33 @@ function firstNameFrom(email) {
   return email?.split('@')[0] ?? 'toi'
 }
 
+const TARGET_KEYS = ['target_calories', 'target_protein_g', 'target_carbs_g', 'target_fat_g']
+
 // ─── composant ──────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [workouts,   setWorkouts]   = useState([])
-  const [setsCounts, setSetsCounts] = useState({})
-  const [meals,      setMeals]      = useState([])
-  const [metrics,    setMetrics]    = useState({ seances: 0, series: 0, calories: 0, proteines: 0 })
-  const [profile,    setProfile]    = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [hoveredBtn, setHoveredBtn] = useState(null) // 'seance' | 'repas' | null
+  const [workouts,    setWorkouts]    = useState([])
+  const [setsCounts,  setSetsCounts]  = useState({})
+  const [recentMeals, setRecentMeals] = useState([])
+  const [todayMacros, setTodayMacros] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 })
+  const [metrics,     setMetrics]     = useState({ seances: 0, series: 0 })
+  const [profile,     setProfile]     = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [hoveredBtn,  setHoveredBtn]  = useState(null) // 'seance' | 'repas' | null
 
   async function fetchAll() {
     setLoading(true)
-    await Promise.all([fetchWorkouts(), fetchMeals(), fetchProfile()])
+    await Promise.all([fetchWorkouts(), fetchTodayMacros(), fetchRecentMeals(), fetchProfile()])
     setLoading(false)
   }
 
   async function fetchProfile() {
     const { data } = await supabase
       .from('profiles')
-      .select('username, target_calories, target_protein_g')
+      .select('username, target_calories, target_protein_g, target_carbs_g, target_fat_g')
       .eq('id', user.id)
       .maybeSingle()
     setProfile(data ?? null)
@@ -109,32 +112,36 @@ export default function Dashboard() {
     setMetrics(m => ({ ...m, seances: workoutList.length, series: totalSeries }))
   }
 
-  async function fetchMeals() {
+  // Macros consommées aujourd'hui (pour les objectifs).
+  async function fetchTodayMacros() {
     const dayStart = startOfDay()
-    const { data: mData } = await supabase
+    const { data } = await supabase
       .from('meals')
-      .select('*, food_items(*)')
+      .select('food_items(calories, protein_g, carbohydrates_g, fat_g)')
       .eq('user_id', user.id)
       .gte('eaten_at', dayStart)
-      .order('eaten_at', { ascending: true })
 
-    const mealList = mData ?? []
-    setMeals(mealList)
-
-    let totalKcal = 0
-    let totalProt = 0
-    mealList.forEach(meal => {
+    const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    ;(data ?? []).forEach(meal => {
       ;(meal.food_items ?? []).forEach(fi => {
-        totalKcal += fi.calories  ?? 0
-        totalProt += fi.protein_g ?? 0
+        totals.calories += fi.calories ?? 0
+        totals.protein  += fi.protein_g ?? 0
+        totals.carbs    += fi.carbohydrates_g ?? 0
+        totals.fat      += fi.fat_g ?? 0
       })
     })
+    setTodayMacros(totals)
+  }
 
-    setMetrics(m => ({
-      ...m,
-      calories:  Math.round(totalKcal),
-      proteines: Math.round(totalProt),
-    }))
+  // 3 derniers repas enregistrés (toutes dates confondues).
+  async function fetchRecentMeals() {
+    const { data } = await supabase
+      .from('meals')
+      .select('id, name, type, eaten_at, food_items(calories)')
+      .eq('user_id', user.id)
+      .order('eaten_at', { ascending: false })
+      .limit(3)
+    setRecentMeals(data ?? [])
   }
 
   const mealKcal = (meal) =>
@@ -147,6 +154,16 @@ export default function Dashboard() {
     fetchAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // ─── dérivés ──────────────────────────────────────────────────────────────
+
+  const hasAnyTarget = TARGET_KEYS.some(k => profile?.[k] != null && profile[k] > 0)
+  const objStats = [
+    { key: 'calories', label: 'Calories', value: todayMacros.calories, target: profile?.target_calories,  unit: '',  color: '#A8FF3E' },
+    { key: 'protein',  label: 'Protéines', value: todayMacros.protein, target: profile?.target_protein_g, unit: 'g', color: '#3EE0FF' },
+    { key: 'carbs',    label: 'Glucides',  value: todayMacros.carbs,   target: profile?.target_carbs_g,   unit: 'g', color: '#FFD93E' },
+    { key: 'fat',      label: 'Lipides',   value: todayMacros.fat,     target: profile?.target_fat_g,     unit: 'g', color: '#FF8A5C' },
+  ]
 
   // ─── rendu ────────────────────────────────────────────────────────────────
 
@@ -161,25 +178,51 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Métriques */}
+        {/* Objectifs du jour — mis en avant */}
+        <div style={s.objCard}>
+          <div style={s.objHead}>
+            <span style={s.objTitle}>Objectifs du jour</span>
+            <button style={s.objLink} onClick={() => navigate(hasAnyTarget ? '/nutrition' : '/profile')}>
+              {hasAnyTarget ? 'Détail →' : 'Configurer →'}
+            </button>
+          </div>
+
+          {hasAnyTarget ? (
+            <div style={s.objGrid}>
+              {objStats.map((m, i) => {
+                const val = Math.round(m.value)
+                const hasT = m.target != null && m.target > 0
+                const over = hasT && m.value > m.target
+                const pct = hasT ? Math.min(100, (m.value / m.target) * 100) : 0
+                return (
+                  <div key={m.key} style={{ ...s.objItem, ...(i > 0 ? s.objItemBorder : {}) }}>
+                    <span style={s.objLabel}>{m.label}</span>
+                    <span style={s.objValue}>
+                      {loading ? '—' : val}
+                      {hasT
+                        ? <span style={s.objTarget}> / {Math.round(m.target)}{m.unit}</span>
+                        : (m.unit && <span style={s.objTarget}>{m.unit}</span>)}
+                    </span>
+                    <div style={s.barTrack}>
+                      <div style={{ ...s.barFill, width: `${pct}%`, background: over ? '#FF5757' : m.color }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div style={s.objEmpty}>
+              <p style={s.objEmptyText}>Définis tes objectifs nutritionnels pour suivre ta progression chaque jour.</p>
+              <button style={s.objCtaBtn} onClick={() => navigate('/profile')}>Définir mes objectifs</button>
+            </div>
+          )}
+        </div>
+
+        {/* Métriques séances */}
         <div style={s.metrics}>
           {[
             { lbl: 'Séances / semaine', val: metrics.seances, unit: 'cette semaine', accent: true },
             { lbl: 'Séries totales',    val: metrics.series,  unit: 'cette semaine' },
-            {
-              lbl: "Calories aujourd'hui",
-              val: profile?.target_calories
-                ? `${metrics.calories} / ${Math.round(profile.target_calories)}`
-                : metrics.calories.toLocaleString('fr-FR'),
-              unit: 'kcal',
-            },
-            {
-              lbl: 'Protéines',
-              val: profile?.target_protein_g
-                ? `${metrics.proteines} / ${Math.round(profile.target_protein_g)}`
-                : metrics.proteines,
-              unit: profile?.target_protein_g ? 'g' : "g aujourd'hui",
-            },
           ].map(({ lbl, val, unit, accent }) => (
             <div key={lbl} style={s.metricCard}>
               <p style={s.metricLbl}>{lbl}</p>
@@ -199,18 +242,30 @@ export default function Dashboard() {
             ) : workouts.length === 0 ? (
               <p style={s.empty}>Aucune séance cette semaine.<br />Lance-toi !</p>
             ) : (
-              workouts.slice(0, 5).map(w => (
+              workouts.slice(0, 3).map(w => (
                 <div key={w.id} style={s.row}>
-                  <div>
+                  <div style={s.rowMain}>
                     <p style={s.rowTitle}>{w.name}</p>
                     <p style={s.rowMeta}>
                       {formatDate(w.performed_at)}
                       {w.duration_min ? ` · ${w.duration_min} min` : ''}
                     </p>
                   </div>
-                  <span style={s.badge}>
-                    {setsCounts[w.id] ?? 0} série{(setsCounts[w.id] ?? 0) !== 1 ? 's' : ''}
-                  </span>
+                  <div style={s.rowRight}>
+                    <span style={s.badge}>
+                      {setsCounts[w.id] ?? 0} série{(setsCounts[w.id] ?? 0) !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                      style={s.goBtn}
+                      title="Voir la séance"
+                      aria-label="Voir la séance"
+                      onClick={() => navigate('/workouts', { state: { focusId: w.id } })}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#A8FF3E'; e.currentTarget.style.borderColor = '#A8FF3E' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#6B7068'; e.currentTarget.style.borderColor = '#252620' }}
+                    >
+                      ›
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -218,17 +273,17 @@ export default function Dashboard() {
 
           {/* Repas */}
           <div style={s.card}>
-            <span style={s.cardTitle}>Repas du jour</span>
+            <span style={s.cardTitle}>Derniers repas</span>
             {loading ? (
               <p style={s.empty}>Chargement…</p>
-            ) : meals.length === 0 ? (
-              <p style={s.empty}>Aucun repas enregistré aujourd'hui.</p>
+            ) : recentMeals.length === 0 ? (
+              <p style={s.empty}>Aucun repas enregistré pour le moment.</p>
             ) : (
-              meals.map(m => (
+              recentMeals.map(m => (
                 <div key={m.id} style={s.row}>
-                  <div>
+                  <div style={s.rowMain}>
                     <p style={s.rowTitle}>{m.name}</p>
-                    <p style={s.rowMeta}>{m.type}</p>
+                    <p style={s.rowMeta}>{formatDate(m.eaten_at)} · {m.type}</p>
                   </div>
                   <span style={{ ...s.badge, color: '#A8FF3E', borderColor: 'rgba(168,255,62,0.15)' }}>
                     {mealKcal(m)} kcal
@@ -276,7 +331,7 @@ export default function Dashboard() {
 // ─── styles ─────────────────────────────────────────────────────────────────
 
 const s = {
-  greeting: { marginBottom: '1rem' },
+  greeting: { marginBottom: '1.25rem' },
   greetingSub: {
     color: '#666',
     fontSize: '11px',
@@ -290,6 +345,111 @@ const s = {
     color: '#fff',
     fontSize: '28px',
   },
+
+  // Objectifs (mis en avant)
+  objCard: {
+    ...CARD_ROUNDED,
+    border: '1px solid rgba(168, 255, 62, 0.22)',
+    background: 'linear-gradient(180deg, rgba(168,255,62,0.04), rgba(168,255,62,0) 60%), #111310',
+    padding: '1rem 1.1rem',
+    marginBottom: '1.5rem',
+  },
+  objHead: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '1rem',
+  },
+  objTitle: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: '14px',
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#A8FF3E',
+  },
+  objLink: {
+    background: 'transparent',
+    border: 'none',
+    color: '#8A8E88',
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    padding: 0,
+  },
+  objGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+  },
+  objItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '0 16px',
+  },
+  objItemBorder: {
+    borderLeft: '1px solid #252924',
+  },
+  objLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: '#6B7068',
+  },
+  objValue: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    color: '#F0F0EE',
+    lineHeight: 1,
+  },
+  objTarget: {
+    fontSize: '0.8rem',
+    color: '#6B7068',
+    fontWeight: 700,
+  },
+  barTrack: {
+    height: '5px',
+    borderRadius: '3px',
+    background: '#252924',
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.3s ease',
+  },
+  objEmpty: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    flexWrap: 'wrap',
+  },
+  objEmptyText: {
+    fontSize: '13px',
+    color: '#8A8E88',
+    margin: 0,
+    lineHeight: 1.5,
+    flex: 1,
+    minWidth: '180px',
+  },
+  objCtaBtn: {
+    background: '#A8FF3E',
+    color: '#0D0F0E',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '8px 16px',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontWeight: 700,
+    fontSize: '0.9rem',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+
   metrics: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
@@ -328,6 +488,31 @@ const s = {
   row: {
     ...ROW,
     padding: '8px 0',
+  },
+  rowMain: {
+    minWidth: 0,
+  },
+  rowRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexShrink: 0,
+  },
+  goBtn: {
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: '1px solid #252620',
+    borderRadius: '6px',
+    color: '#6B7068',
+    fontSize: '16px',
+    lineHeight: 1,
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'color 0.15s, border-color 0.15s',
   },
   rowTitle: {
     ...ROW_TITLE,
