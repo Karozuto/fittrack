@@ -55,7 +55,7 @@ All Supabase queries run directly inside page/component files via the singleton 
 
 All macro columns (`calories`, `protein_g`, `carbohydrates_g`, `fat_g`) are `real`. RLS is enabled on every `public` table; user-scoped tables (`workouts`, `meals`, `profiles`) filter by `user_id`/`id`.
 
-> The schema was cleaned up: dropped dead/unused columns `food_items.carbs_g` (duplicate of `carbohydrates_g`), `workout_sets.duration_s`, `workout_sets.notes`, `meals.notes`, `exercises.primary_muscles`, `exercises.secondary_muscles`. The app only ever used `muscle_groups`. SECURITY DEFINER functions (`handle_new_user`, `rls_auto_enable`, `replace_in_array`) were hardened: fixed `search_path` and revoked `EXECUTE` from `anon`/`authenticated`/`public` (triggers still run). The only remaining security advisor is *Leaked Password Protection* — a Supabase Auth dashboard toggle, not fixable via SQL.
+> The schema was cleaned up: dropped dead/unused columns `food_items.carbs_g` (duplicate of `carbohydrates_g`), `workout_sets.duration_s`, `workout_sets.notes`, `meals.notes`, `exercises.primary_muscles`, `exercises.secondary_muscles`. The app only ever used `muscle_groups`. SECURITY DEFINER functions (`handle_new_user`, `rls_auto_enable`, `replace_in_array`) were hardened: fixed `search_path` and revoked `EXECUTE` from `anon`/`authenticated`/`public` (triggers still run). The only remaining security advisor is *Leaked Password Protection*, which is a **Pro-plan-only** Auth feature (HaveIBeenPwned). The project is on the Free plan, so it can't be enabled — treat this advisor as an expected false positive, not an action item.
 
 ### Styling
 
