@@ -34,9 +34,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=...
 
 ### Routing
 
-Routes are declared in `src/App.jsx`. `/`, `/workouts`, `/nutrition`, and `/analytics` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component. The navbar links live in `src/components/Navbar.jsx` (the Analytics link is labelled "Analyse").
+Routes are declared in `src/App.jsx`. `/`, `/workouts`, `/nutrition`, `/analytics`, and `/profile` are wrapped in `<ProtectedRoute>` with `<Navbar>` inlined before the page component. The navbar links live in `src/components/Navbar.jsx` (the Analytics link is labelled "Analyse").
 
-The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the active tab with `useLocation()` and renders it as a green pill (`#A8FF3E` text on `rgba(168,255,62,0.1)`); thin vertical separators sit between tabs; the `FITTRACK` logo is clickable and navigates to `/`.
+The navbar is **sticky** (`position:sticky; top:0; zIndex:100`). It detects the active tab with `useLocation()` and renders it as a green pill (`#A8FF3E` text on `rgba(168,255,62,0.1)`); thin vertical separators sit between tabs; the `FITTRACK` logo is clickable and navigates to `/`. The user **email (top-right) is clickable and navigates to `/profile`** (and turns accent when active) — that's the only entry point to the profile page (it's not a main tab).
 
 ### Data access
 
@@ -46,7 +46,7 @@ All Supabase queries run directly inside page/component files via the singleton 
 
 | Table | Key columns |
 |---|---|
-| `profiles` | `id` (→ `auth.users`), `username`, `age`, `weight`, `height`, `goal`, `created_at` |
+| `profiles` | `id` (→ `auth.users`), `username`, `sex`, `age`, `weight`, `height`, `goal`, `target_calories`, `target_protein_g`, `target_carbs_g`, `target_fat_g`, `created_at` |
 | `workouts` | `id`, `user_id`, `name`, `notes`, `performed_at`, `duration_min`, `created_at` |
 | `workout_sets` | `id`, `workout_id`, `exercise_id`, `set_number`, `reps`, `weight_kg`, `created_at` |
 | `exercises` | `id`, `name`, `description`, `exercise_type`, `muscle_groups` (text array), `created_at` |
@@ -124,6 +124,18 @@ food_items: id, meal_id, name, product_name, barcode, calories, protein_g, carbo
 ```
 
 Row-level security filters by `user_id`.
+
+## Profile & Goals Feature
+
+Profile/settings page at `/profile` (`src/pages/ProfilePage.jsx`). Reached **only** by clicking the email in the navbar (top-right) — no main tab.
+
+- **Identity card**: `username` (text), `sex` (Homme/Femme segmented), `age`/`weight`/`height` (`NumberStepper`), `goal` (Perte/Maintien/Prise segmented). Derived **BMI** shown below (weight / height²) with a category label.
+- **Nutrition targets card**: 4 editable targets (`target_calories`, `target_protein_g`, `target_carbs_g`, `target_fat_g`). A **"Calculer auto"** button derives them from BMR (Mifflin-St Jeor) × activity factor × goal factor (`perte` 0.85 / `maintien` 1 / `prise` 1.1); protein = 2 g/kg (2.2 for `perte`), fat = 25% of kcal, carbs = remainder. The activity level selector is **transient** (not persisted — only feeds the calc).
+- Save via `supabase.from('profiles').upsert(payload)` (the row already exists from the `handle_new_user` trigger; RLS allows id = auth.uid()).
+
+The targets feed two places:
+- **NutritionPage** summary card: each macro shows `consumed / target` with a thin progress bar (macro color, turns red `#FF5757` when over target). Falls back to plain totals when no target is set. Targets fetched inline in a `useEffect` keyed on `user`.
+- **Dashboard**: greets by `username` (fallback to email prefix); Calories and Protéines metrics show `X / target` when a target exists.
 
 ## Analytics Feature
 

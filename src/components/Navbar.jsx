@@ -42,7 +42,15 @@ export default function Navbar() {
         })}
       </div>
       <div style={s.right}>
-        <span style={s.email}>{user?.email}</span>
+        <button
+          style={{ ...s.email, ...(location.pathname === '/profile' ? s.emailActive : {}) }}
+          onClick={() => navigate('/profile')}
+          title="Mon profil"
+          onMouseEnter={e => { if (location.pathname !== '/profile') e.currentTarget.style.color = '#A8A8A8' }}
+          onMouseLeave={e => { if (location.pathname !== '/profile') e.currentTarget.style.color = '#444' }}
+        >
+          {user?.email}
+        </button>
         <button style={s.btn} onClick={handleSignOut}>
           Se déconnecter
         </button>
@@ -119,6 +127,16 @@ const s = {
   email: {
     color: '#444',
     fontSize: '12px',
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    transition: 'color 0.2s',
+    outline: 'none',
+  },
+  emailActive: {
+    color: '#A8FF3E',
   },
   btn: {
     background: 'transparent',

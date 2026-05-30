@@ -41,16 +41,17 @@ const s = {
     marginBottom: '1.5rem',
   },
   summaryGrid: {
-    display: 'flex',
-    alignItems: 'center',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
   },
-  summaryItem: {
-    flex: 1,
+  statCell: {
     display: 'flex',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    gap: '6px',
-    padding: '0 8px',
+    flexDirection: 'column',
+    gap: '7px',
+    padding: '0 14px',
+  },
+  statCellBorder: {
+    borderLeft: '1px solid #252924',
   },
   summaryLabel: {
     fontSize: '11px',
@@ -64,7 +65,7 @@ const s = {
     fontFamily: "'Barlow Condensed', sans-serif",
     fontSize: '1.05rem',
     fontWeight: 700,
-    color: '#A8FF3E',
+    color: '#F0F0EE',
     margin: 0,
     lineHeight: 1,
   },
@@ -74,11 +75,21 @@ const s = {
     marginLeft: '1px',
     fontWeight: 700,
   },
-  summarySep: {
-    width: '1px',
-    height: '14px',
+  summaryTarget: {
+    fontSize: '0.85rem',
+    color: '#6B7068',
+    fontWeight: 700,
+  },
+  barTrack: {
+    height: '4px',
+    borderRadius: '3px',
     background: '#252924',
-    flexShrink: 0,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.3s ease',
   },
   sectionsContainer: {
     display: 'flex',
@@ -126,12 +137,18 @@ export default function NutritionPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingFood, setEditingFood] = useState(null)
   const [btnHover, setBtnHover] = useState(false)
+  const [targets, setTargets] = useState(null)
 
   useEffect(() => {
     fetchMeals()
     fetchMonthMeals()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
+
+  useEffect(() => {
+    fetchTargets()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   async function fetchMeals() {
     setLoading(true)
@@ -192,6 +209,19 @@ export default function NutritionPage() {
     }
   }
 
+  async function fetchTargets() {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('target_calories, target_protein_g, target_carbs_g, target_fat_g')
+        .eq('id', user.id)
+        .maybeSingle()
+      setTargets(data || null)
+    } catch (e) {
+      console.error('Erreur chargement objectifs:', e.message)
+    }
+  }
+
   function calculateTotals() {
     const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
     Object.values(displayedMeals).forEach(mealList => {
@@ -209,6 +239,13 @@ export default function NutritionPage() {
 
   const totals = calculateTotals()
   const hasData = Object.values(displayedMeals).some(list => list.length > 0)
+
+  const macroStats = [
+    { key: 'calories', label: 'Calories', value: totals.calories, target: targets?.target_calories, unit: '', color: '#A8FF3E', decimals: 0 },
+    { key: 'protein', label: 'Protéines', value: totals.protein, target: targets?.target_protein_g, unit: 'g', color: '#3EE0FF', decimals: 1 },
+    { key: 'carbs', label: 'Glucides', value: totals.carbs, target: targets?.target_carbs_g, unit: 'g', color: '#FFD93E', decimals: 1 },
+    { key: 'fat', label: 'Lipides', value: totals.fat, target: targets?.target_fat_g, unit: 'g', color: '#FF8A5C', decimals: 1 },
+  ]
 
   return (
     <PageLayout>
@@ -233,25 +270,28 @@ export default function NutritionPage() {
         {!loading && hasData && (
           <div style={s.summaryCard}>
             <div style={s.summaryGrid}>
-              <div style={s.summaryItem}>
-                <p style={s.summaryLabel}>Calories</p>
-                <p style={s.summaryValue}>{Math.round(totals.calories)}</p>
-              </div>
-              <div style={s.summarySep} />
-              <div style={s.summaryItem}>
-                <p style={s.summaryLabel}>Protéines</p>
-                <p style={s.summaryValue}>{totals.protein.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
-              </div>
-              <div style={s.summarySep} />
-              <div style={s.summaryItem}>
-                <p style={s.summaryLabel}>Glucides</p>
-                <p style={s.summaryValue}>{totals.carbs.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
-              </div>
-              <div style={s.summarySep} />
-              <div style={s.summaryItem}>
-                <p style={s.summaryLabel}>Lipides</p>
-                <p style={s.summaryValue}>{totals.fat.toFixed(1)}<span style={s.summaryUnit}>g</span></p>
-              </div>
+              {macroStats.map((m, i) => {
+                const val = m.decimals === 0 ? Math.round(m.value) : Math.round(m.value * 10) / 10
+                const hasTarget = m.target != null && m.target > 0
+                const over = hasTarget && m.value > m.target
+                const pct = hasTarget ? Math.min(100, (m.value / m.target) * 100) : 0
+                return (
+                  <div key={m.key} style={{ ...s.statCell, ...(i > 0 ? s.statCellBorder : {}) }}>
+                    <p style={s.summaryLabel}>{m.label}</p>
+                    <p style={s.summaryValue}>
+                      {val}{m.unit && <span style={s.summaryUnit}>{m.unit}</span>}
+                      {hasTarget && (
+                        <span style={s.summaryTarget}> / {Math.round(m.target)}{m.unit}</span>
+                      )}
+                    </p>
+                    {hasTarget && (
+                      <div style={s.barTrack}>
+                        <div style={{ ...s.barFill, width: `${pct}%`, background: over ? '#FF5757' : m.color }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

@@ -7,10 +7,15 @@ Légende effort : 🟢 faible · 🟡 moyen · 🔴 élevé
 
 ---
 
-## 1. Profil & Objectifs 🟡 — _prochain chantier_
+## 1. Profil & Objectifs 🟡 — ✅ _livré_
 
-**Problème** : la table `profiles` (`username, age, weight, height, goal`) est remplie à
-l'inscription puis **jamais lue ni éditée** par l'app. Aucun objectif nutritionnel n'existe.
+> Page `/profile` (accès via l'email de la navbar) : édition identité + objectifs nutritionnels,
+> IMC dérivé, « Calculer auto » (Mifflin-St Jeor). Les cibles alimentent les barres de
+> progression du récap Nutrition (rouge si dépassé) et le Dashboard (salutation par username +
+> métriques X / cible). Colonnes ajoutées : `profiles.sex` + `target_*`.
+
+**Problème (résolu)** : la table `profiles` (`username, age, weight, height, goal`) était remplie
+à l'inscription puis **jamais lue ni éditée** par l'app. Aucun objectif nutritionnel n'existait.
 
 **Livrables**
 - **Migration DB** : ajouter à `profiles` les cibles nutritionnelles

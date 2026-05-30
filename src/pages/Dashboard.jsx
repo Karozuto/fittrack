@@ -56,13 +56,23 @@ export default function Dashboard() {
   const [setsCounts, setSetsCounts] = useState({})
   const [meals,      setMeals]      = useState([])
   const [metrics,    setMetrics]    = useState({ seances: 0, series: 0, calories: 0, proteines: 0 })
+  const [profile,    setProfile]    = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [hoveredBtn, setHoveredBtn] = useState(null) // 'seance' | 'repas' | null
 
   async function fetchAll() {
     setLoading(true)
-    await Promise.all([fetchWorkouts(), fetchMeals()])
+    await Promise.all([fetchWorkouts(), fetchMeals(), fetchProfile()])
     setLoading(false)
+  }
+
+  async function fetchProfile() {
+    const { data } = await supabase
+      .from('profiles')
+      .select('username, target_calories, target_protein_g')
+      .eq('id', user.id)
+      .maybeSingle()
+    setProfile(data ?? null)
   }
 
   async function fetchWorkouts() {
@@ -147,7 +157,7 @@ export default function Dashboard() {
         <div style={s.greeting}>
           <p style={s.greetingSub}>{todayLabel()}</p>
           <h1 style={s.greetingName}>
-            Bonjour, <span style={{ color: '#A8FF3E' }}>{firstNameFrom(user?.email)}</span> 💪
+            Bonjour, <span style={{ color: '#A8FF3E' }}>{profile?.username || firstNameFrom(user?.email)}</span> 💪
           </h1>
         </div>
 
@@ -156,8 +166,20 @@ export default function Dashboard() {
           {[
             { lbl: 'Séances / semaine', val: metrics.seances, unit: 'cette semaine', accent: true },
             { lbl: 'Séries totales',    val: metrics.series,  unit: 'cette semaine' },
-            { lbl: "Calories aujourd'hui", val: metrics.calories.toLocaleString('fr-FR'), unit: 'kcal' },
-            { lbl: 'Protéines',         val: metrics.proteines, unit: "g aujourd'hui" },
+            {
+              lbl: "Calories aujourd'hui",
+              val: profile?.target_calories
+                ? `${metrics.calories} / ${Math.round(profile.target_calories)}`
+                : metrics.calories.toLocaleString('fr-FR'),
+              unit: 'kcal',
+            },
+            {
+              lbl: 'Protéines',
+              val: profile?.target_protein_g
+                ? `${metrics.proteines} / ${Math.round(profile.target_protein_g)}`
+                : metrics.proteines,
+              unit: profile?.target_protein_g ? 'g' : "g aujourd'hui",
+            },
           ].map(({ lbl, val, unit, accent }) => (
             <div key={lbl} style={s.metricCard}>
               <p style={s.metricLbl}>{lbl}</p>

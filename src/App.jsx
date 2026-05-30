@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import WorkoutsPage from './pages/WorkoutsPage'
 import NutritionPage from './pages/NutritionPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
   return (
@@ -47,6 +48,15 @@ export default function App() {
               <ProtectedRoute>
                 <Navbar />
                 <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Navbar />
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
