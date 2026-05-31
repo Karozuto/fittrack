@@ -139,7 +139,7 @@ Profile/settings page at `/profile` (`src/pages/ProfilePage.jsx`). Reached **onl
 
 The targets feed two places:
 - **NutritionPage** summary card: each macro shows `consumed / target` with a thin progress bar (macro color, turns red `#FF5757` when over target). Falls back to plain totals when no target is set. Targets fetched inline in a `useEffect` keyed on `user`.
-- **Dashboard**: greets by `username` (fallback to email prefix) and has a prominent **"Objectifs du jour"** card (consumed-today vs target progress bars for calories + 3 macros; CTA to `/profile` when no target set). "Dernières séances" is capped at 3 with a `›` button that deep-links to `/workouts` (via `navigate(..., { state: { focusId } })`; the page scrolls to and highlights that card). "Derniers repas" shows the 3 most recent meals (any date, `eaten_at` desc).
+- **Dashboard**: greets by `username` (fallback to email prefix) and has a prominent **"Objectifs du jour"** card (consumed-today vs target progress bars for calories + 3 macros; CTA to `/profile` when no target set). "Dernières séances" is capped at 3 with a `›` button that deep-links to `/workouts` (via `navigate(..., { state: { focusId } })`; the page scrolls to, highlights, and **auto-expands** that card — `WorkoutCard` takes a `defaultExpanded` prop driven by `workout.id === focusId`). "Derniers repas" shows the 3 most recent meals (any date, `eaten_at` desc).
 
 ## Analytics Feature
 

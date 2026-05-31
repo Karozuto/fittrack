@@ -234,6 +234,7 @@ export default function WorkoutsPage() {
                   workout={workout}
                   onDeleted={handleWorkoutDeleted}
                   onEdit={handleEdit}
+                  defaultExpanded={workout.id === focusId}
                 />
               </div>
             ))}

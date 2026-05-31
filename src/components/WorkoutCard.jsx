@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { getMuscleColor } from '../lib/muscleColors'
 
@@ -72,11 +72,18 @@ const TrashIcon = () => (
   </svg>
 )
 
-export default function WorkoutCard({ workout, onDeleted, onEdit }) {
+export default function WorkoutCard({ workout, onDeleted, onEdit, defaultExpanded = false }) {
   const [hover, setHover] = useState(false)
   const [delHover, setDelHover] = useState(false)
   const [editHover, setEditHover] = useState(false)
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(defaultExpanded)
+
+  // Déplie la séance quand elle devient la cible d'une redirection depuis l'accueil.
+  useEffect(() => {
+    if (!defaultExpanded) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpanded(true)
+  }, [defaultExpanded])
 
   const exerciseGroups = groupSetsByExercise(workout.workout_sets)
 
