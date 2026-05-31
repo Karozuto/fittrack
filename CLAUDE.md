@@ -141,6 +141,10 @@ The targets feed two places:
 - **NutritionPage** summary card: each macro shows `consumed / target` with a thin progress bar (macro color, turns red `#FF5757` when over target). Falls back to plain totals when no target is set. Targets fetched inline in a `useEffect` keyed on `user`.
 - **Dashboard**: greets by `username` (fallback to email prefix) and has a prominent **"Objectifs du jour"** card (consumed-today vs target progress bars for calories + 3 macros; CTA to `/profile` when no target set). "Dernières séances" is capped at 3 with a `›` button that deep-links to `/workouts` (via `navigate(..., { state: { focusId } })`; the page scrolls to, highlights, and **auto-expands** that card — `WorkoutCard` takes a `defaultExpanded` prop driven by `workout.id === focusId`). "Derniers repas" shows the 3 most recent meals (any date, `eaten_at` desc).
 
+## Workouts — Duplicate to another date
+
+`WorkoutCard` has a copy button (`onDuplicate` prop) that opens **`DuplicateWorkoutModal`** (a date picker). On confirm it re-creates the workout at the chosen date: re-queries the source `workouts` row (the list query doesn't load `duration_min`/`set_number`) for `name`/`notes`/`duration_min`, inserts a new `workouts` row, then copies every `workout_sets` row (`exercise_id`, `set_number`, `reps`, `weight_kg`) to the new `workout_id`. Uses the same insert paths as creation (covered by existing RLS).
+
 ## Analytics Feature
 
 Progression/analytics page at `/analytics` (`src/pages/AnalyticsPage.jsx`) built with **Recharts**. Two tabs:

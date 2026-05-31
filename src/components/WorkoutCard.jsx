@@ -72,10 +72,18 @@ const TrashIcon = () => (
   </svg>
 )
 
-export default function WorkoutCard({ workout, onDeleted, onEdit, defaultExpanded = false }) {
+const CopyIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+)
+
+export default function WorkoutCard({ workout, onDeleted, onEdit, onDuplicate, defaultExpanded = false }) {
   const [hover, setHover] = useState(false)
   const [delHover, setDelHover] = useState(false)
   const [editHover, setEditHover] = useState(false)
+  const [copyHover, setCopyHover] = useState(false)
   const [expanded, setExpanded] = useState(defaultExpanded)
 
   // Déplie la séance quand elle devient la cible d'une redirection depuis l'accueil.
@@ -140,6 +148,23 @@ export default function WorkoutCard({ workout, onDeleted, onEdit, defaultExpande
             </h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {onDuplicate && (
+              <button
+                style={{
+                  width: '34px', height: '34px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: copyHover ? '#A8FF3E18' : '#1E2320',
+                  border: `1px solid ${copyHover ? '#A8FF3E' : '#2A2E28'}`,
+                  borderRadius: '7px',
+                  color: copyHover ? '#A8FF3E' : '#8A8E88',
+                  cursor: 'pointer', transition: 'all 0.15s', padding: 0,
+                }}
+                onMouseEnter={() => setCopyHover(true)}
+                onMouseLeave={() => setCopyHover(false)}
+                onClick={() => onDuplicate(workout)}
+                title="Dupliquer à une autre date"
+              ><CopyIcon /></button>
+            )}
             <button
               style={{
                 width: '34px', height: '34px',

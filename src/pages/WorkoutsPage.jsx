@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import WorkoutCard from '../components/WorkoutCard'
 import CreateWorkoutModal from '../components/CreateWorkoutModal'
+import DuplicateWorkoutModal from '../components/DuplicateWorkoutModal'
 import PageHeader from '../components/PageHeader'
 import PageLayout from '../components/PageLayout'
 import { TYPOGRAPHY } from '../lib/typography'
@@ -107,6 +108,7 @@ export default function WorkoutsPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingWorkout, setEditingWorkout] = useState(null)
+  const [duplicatingWorkout, setDuplicatingWorkout] = useState(null)
   const [btnHover, setBtnHover] = useState(false)
   const [highlightId, setHighlightId] = useState(null)
 
@@ -234,6 +236,7 @@ export default function WorkoutsPage() {
                   workout={workout}
                   onDeleted={handleWorkoutDeleted}
                   onEdit={handleEdit}
+                  onDuplicate={setDuplicatingWorkout}
                   defaultExpanded={workout.id === focusId}
                 />
               </div>
@@ -247,6 +250,14 @@ export default function WorkoutsPage() {
           workout={editingWorkout}
           onClose={closeModal}
           onCreated={handleWorkoutSaved}
+        />
+      )}
+
+      {duplicatingWorkout && (
+        <DuplicateWorkoutModal
+          workout={duplicatingWorkout}
+          onClose={() => setDuplicatingWorkout(null)}
+          onCreated={() => { setDuplicatingWorkout(null); fetchWorkouts() }}
         />
       )}
     </PageLayout>
