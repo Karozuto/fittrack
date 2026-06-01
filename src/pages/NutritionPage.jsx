@@ -72,7 +72,6 @@ const s = {
   summaryUnit: {
     fontSize: '0.8rem',
     color: '#6B7068',
-    marginLeft: '1px',
     fontWeight: 700,
   },
   summaryTarget: {
@@ -241,10 +240,10 @@ export default function NutritionPage() {
   const hasData = Object.values(displayedMeals).some(list => list.length > 0)
 
   const macroStats = [
-    { key: 'calories', label: 'Calories', value: totals.calories, target: targets?.target_calories, unit: '', color: '#A8FF3E', decimals: 0 },
-    { key: 'protein', label: 'Protéines', value: totals.protein, target: targets?.target_protein_g, unit: 'g', color: '#3EE0FF', decimals: 1 },
-    { key: 'carbs', label: 'Glucides', value: totals.carbs, target: targets?.target_carbs_g, unit: 'g', color: '#FFD93E', decimals: 1 },
-    { key: 'fat', label: 'Lipides', value: totals.fat, target: targets?.target_fat_g, unit: 'g', color: '#FF8A5C', decimals: 1 },
+    { key: 'calories', label: 'Calories', value: totals.calories, target: targets?.target_calories, unit: ' kcal', color: '#A8FF3E', decimals: 0 },
+    { key: 'protein', label: 'Protéines', value: totals.protein, target: targets?.target_protein_g, unit: ' g', color: '#3EE0FF', decimals: 1 },
+    { key: 'carbs', label: 'Glucides', value: totals.carbs, target: targets?.target_carbs_g, unit: ' g', color: '#FFD93E', decimals: 1 },
+    { key: 'fat', label: 'Lipides', value: totals.fat, target: targets?.target_fat_g, unit: ' g', color: '#FF8A5C', decimals: 1 },
   ]
 
   return (

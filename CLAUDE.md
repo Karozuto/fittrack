@@ -54,8 +54,9 @@ All Supabase queries run directly inside page/component files via the singleton 
 | `exercises` | `id`, `name`, `description`, `exercise_type`, `muscle_groups` (text array), `created_at` |
 | `meals` | `id`, `user_id`, `name`, `type` (NOT NULL, default `'Déjeuner'`), `eaten_at`, `created_at` |
 | `food_items` | `id`, `meal_id`, `name`, `product_name`, `barcode`, `quantity_g`, `quantity_unit`, `calories`, `protein_g`, `carbohydrates_g`, `fat_g`, `created_at` |
+| `saved_foods` | `id`, `user_id`, `name`, `barcode`, `image_url`, `calories`, `protein_g`, `carbohydrates_g`, `fat_g` (**per-base: per 100 g/ml, or per unit**), `quantity_unit`, `last_used_at`, `created_at` |
 
-All macro columns (`calories`, `protein_g`, `carbohydrates_g`, `fat_g`) are `real`. RLS is enabled on every `public` table; user-scoped tables (`workouts`, `meals`, `profiles`) filter by `user_id`/`id`.
+All macro columns (`calories`, `protein_g`, `carbohydrates_g`, `fat_g`) are `real`. RLS is enabled on every `public` table; user-scoped tables (`workouts`, `meals`, `profiles`, `saved_foods`) filter by `user_id`/`id`.
 
 > The schema was cleaned up: dropped dead/unused columns `food_items.carbs_g` (duplicate of `carbohydrates_g`), `workout_sets.duration_s`, `workout_sets.notes`, `meals.notes`, `exercises.primary_muscles`, `exercises.secondary_muscles`. The app only ever used `muscle_groups`. SECURITY DEFINER functions (`handle_new_user`, `rls_auto_enable`, `replace_in_array`) were hardened: fixed `search_path` and revoked `EXECUTE` from `anon`/`authenticated`/`public` (triggers still run). The only remaining security advisor is *Leaked Password Protection*, which is a **Pro-plan-only** Auth feature (HaveIBeenPwned). The project is on the Free plan, so it can't be enabled — treat this advisor as an expected false positive, not an action item.
 
@@ -126,6 +127,16 @@ food_items: id, meal_id, name, product_name, barcode, calories, protein_g, carbo
 ```
 
 Row-level security filters by `user_id`.
+
+### Saved foods (reusable food library)
+
+`saved_foods` stores reusable foods per user (**macros per base**: per 100 g/ml, or **per unit** when `quantity_unit = 'unité'`). Every add (search/barcode **and** manual) best-effort upserts into it via `saveToLibrary()` (dedup by `barcode` if present, else case-insensitive `name`; refreshes `last_used_at`). A 4th **"📚 Mes aliments"** tab in `CreateMealModal` lists them (filter input, compact rows: thumbnail, name, a "Pour 100 g / Par unité" chip, colored macro chips, trash button). Clicking one builds a synthetic OpenFoodFacts-shaped product (`nutriments['energy-kcal_100g']` etc.) and reuses the existing selected-product → quantity → add flow, so no code is duplicated.
+
+**Unit semantics**: `quantity_unit` can be `g`, `ml`, or `unité`. For `unité`, macros are **per unit** and scaling is `qty × per-unit` (factor `qty/1`); for `g`/`ml` it's `qty/100`. This applies in both `calculateMacros()` (selected product) and `saveManual()`.
+
+### Units formatting convention
+
+Macros always render with a **space** between number and unit (`12.3 g`). **Calories** always show their unit too (`120 kcal`), including in every recap (Dashboard "Objectifs", NutritionPage summary, per-type `MealSection` totals).
 
 ## Profile & Goals Feature
 

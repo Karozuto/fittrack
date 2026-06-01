@@ -186,7 +186,6 @@ const s = {
   totalUnit: {
     fontSize: '0.8rem',
     color: '#6B7068',
-    marginLeft: '1px',
     fontWeight: 700,
   },
   vSepSm: {
@@ -364,22 +363,22 @@ export default function MealSection({ type, meals, onMealDeleted, onEditFood }) 
           <div style={s.sectionTotal}>
             <div style={s.totalItem}>
               <span style={s.totalLabel}>Calories</span>
-              <span style={s.totalValue}>{Math.round(totals.calories)}</span>
+              <span style={s.totalValue}>{Math.round(totals.calories)}<span style={s.totalUnit}>{' '}kcal</span></span>
             </div>
             <div style={s.vSepSm} />
             <div style={s.totalItem}>
               <span style={s.totalLabel}>Protéines</span>
-              <span style={s.totalValue}>{totals.protein.toFixed(1)}<span style={s.totalUnit}>g</span></span>
+              <span style={s.totalValue}>{totals.protein.toFixed(1)}<span style={s.totalUnit}>{' '}g</span></span>
             </div>
             <div style={s.vSepSm} />
             <div style={s.totalItem}>
               <span style={s.totalLabel}>Glucides</span>
-              <span style={s.totalValue}>{totals.carbs.toFixed(1)}<span style={s.totalUnit}>g</span></span>
+              <span style={s.totalValue}>{totals.carbs.toFixed(1)}<span style={s.totalUnit}>{' '}g</span></span>
             </div>
             <div style={s.vSepSm} />
             <div style={s.totalItem}>
               <span style={s.totalLabel}>Lipides</span>
-              <span style={s.totalValue}>{totals.fat.toFixed(1)}<span style={s.totalUnit}>g</span></span>
+              <span style={s.totalValue}>{totals.fat.toFixed(1)}<span style={s.totalUnit}>{' '}g</span></span>
             </div>
           </div>
         </>

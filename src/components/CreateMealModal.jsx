@@ -15,6 +15,15 @@ function detectUnit(product) {
   return 'g'
 }
 
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+)
+
 const s = {
   overlay: {
     position: 'fixed',
@@ -285,6 +294,107 @@ const s = {
     padding: '2rem',
     color: '#6B7068',
   },
+  savedDelete: {
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#1E2320',
+    border: '1px solid #2A2E28',
+    borderRadius: '7px',
+    color: '#8A8E88',
+    cursor: 'pointer',
+    padding: 0,
+    flexShrink: 0,
+    alignSelf: 'center',
+    transition: 'all 0.15s',
+  },
+  basisHint: {
+    fontSize: '11px',
+    color: '#6B7068',
+    margin: '-0.25rem 0 0',
+    fontStyle: 'italic',
+  },
+  savedItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    background: '#0D0F0E',
+    border: '1px solid #1E2320',
+    borderRadius: '8px',
+    padding: '8px 10px',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  savedImg: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '6px',
+    objectFit: 'contain',
+    background: '#161917',
+    flexShrink: 0,
+  },
+  savedImgPh: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '6px',
+    background: '#161917',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+  },
+  savedMain: {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px',
+  },
+  savedTop: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '8px',
+    minWidth: 0,
+  },
+  savedName: {
+    flex: '1 1 auto',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#F0F0EE',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    minWidth: 0,
+  },
+  basisChip: {
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: '#8A8E88',
+    border: '1px solid #2A2E28',
+    borderRadius: '4px',
+    padding: '1px 7px',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    marginLeft: 'auto',
+  },
+  savedChips: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '4px',
+  },
+  chip: {
+    padding: '3px 9px',
+    borderRadius: '5px',
+    fontSize: '11px',
+    fontWeight: 700,
+    whiteSpace: 'nowrap',
+  },
 }
 
 export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
@@ -307,6 +417,87 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
   const [manualFat, setManualFat] = useState('')
   const [manualQuantity, setManualQuantity] = useState('')
   const [manualUnit, setManualUnit] = useState('g')
+  const [savedFoods, setSavedFoods] = useState([])
+  const [savedLoading, setSavedLoading] = useState(false)
+  const [savedQuery, setSavedQuery] = useState('')
+
+  async function fetchSavedFoods() {
+    setSavedLoading(true)
+    try {
+      const { data, error: err } = await supabase
+        .from('saved_foods')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('last_used_at', { ascending: false })
+      if (err) throw err
+      setSavedFoods(data || [])
+    } catch (e) {
+      setError(`Erreur chargement aliments: ${e.message}`)
+    }
+    setSavedLoading(false)
+  }
+
+  async function deleteSavedFood(id) {
+    setSavedFoods(prev => prev.filter(f => f.id !== id))
+    await supabase.from('saved_foods').delete().eq('id', id)
+  }
+
+  // Réutilise un aliment enregistré via le flux "produit sélectionné" existant.
+  function selectSavedFood(sf) {
+    setSelectedProduct({
+      product_name: sf.name,
+      code: sf.barcode,
+      image_front_url: sf.image_url,
+      manual: sf.quantity_unit === 'unité',
+      nutriments: {
+        'energy-kcal_100g': sf.calories,
+        proteins_100g: sf.protein_g,
+        carbohydrates_100g: sf.carbohydrates_g,
+        fat_100g: sf.fat_g,
+      },
+    })
+    setQuantity('')
+    setQuantityUnit(sf.quantity_unit || 'g')
+  }
+
+  // Enregistre (ou met à jour) un aliment dans la bibliothèque. Best-effort.
+  async function saveToLibrary(food) {
+    try {
+      let existing = null
+      if (food.barcode) {
+        const { data } = await supabase
+          .from('saved_foods').select('id')
+          .eq('user_id', user.id).eq('barcode', food.barcode)
+          .limit(1).maybeSingle()
+        existing = data
+      } else {
+        const { data } = await supabase
+          .from('saved_foods').select('id')
+          .eq('user_id', user.id).is('barcode', null).ilike('name', food.name)
+          .limit(1).maybeSingle()
+        existing = data
+      }
+      const payload = {
+        user_id: user.id,
+        name: food.name,
+        barcode: food.barcode ?? null,
+        image_url: food.image_url ?? null,
+        calories: food.cal,
+        protein_g: food.prot,
+        carbohydrates_g: food.carbs,
+        fat_g: food.fat,
+        quantity_unit: food.unit,
+        last_used_at: new Date().toISOString(),
+      }
+      if (existing) {
+        await supabase.from('saved_foods').update(payload).eq('id', existing.id)
+      } else {
+        await supabase.from('saved_foods').insert(payload)
+      }
+    } catch (e) {
+      console.error('saveToLibrary:', e.message)
+    }
+  }
 
   async function searchOpenfoodFacts() {
     if (!query.trim()) return
@@ -358,11 +549,13 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
   function calculateMacros() {
     if (!selectedProduct) return { cal: 0, prot: 0, carbs: 0, fat: 0 }
     const qtyNum = parseFloat(quantity) || 0
+    // Les aliments en "unité" sont définis par unité ; g/ml sont sur une base de 100.
+    const factor = qtyNum / (quantityUnit === 'unité' ? 1 : 100)
     const energy = selectedProduct.nutriments?.['energy-kcal_100g'] || 0
-    const cal = energy * (qtyNum / 100)
-    const prot = (selectedProduct.nutriments?.proteins_100g || 0) * (qtyNum / 100)
-    const carbs = (selectedProduct.nutriments?.carbohydrates_100g || 0) * (qtyNum / 100)
-    const fat = (selectedProduct.nutriments?.fat_100g || 0) * (qtyNum / 100)
+    const cal = energy * factor
+    const prot = (selectedProduct.nutriments?.proteins_100g || 0) * factor
+    const carbs = (selectedProduct.nutriments?.carbohydrates_100g || 0) * factor
+    const fat = (selectedProduct.nutriments?.fat_100g || 0) * factor
     return { cal, prot, carbs, fat }
   }
 
@@ -406,6 +599,18 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
       })
 
       if (foodErr) throw foodErr
+
+      await saveToLibrary({
+        name: selectedProduct.product_name,
+        barcode: selectedProduct.code ?? null,
+        image_url: selectedProduct.image_front_url ?? null,
+        unit: quantityUnit,
+        cal: Math.round(selectedProduct.nutriments?.['energy-kcal_100g'] || 0),
+        prot: Math.round((selectedProduct.nutriments?.proteins_100g || 0) * 10) / 10,
+        carbs: Math.round((selectedProduct.nutriments?.carbohydrates_100g || 0) * 10) / 10,
+        fat: Math.round((selectedProduct.nutriments?.fat_100g || 0) * 10) / 10,
+      })
+
       onCreated()
     } catch (e) {
       setError(e.message)
@@ -422,7 +627,8 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
     setError('')
     try {
       const qtyNum = parseFloat(manualQuantity) || 0
-      const factor = qtyNum / 100
+      // En "unité" : valeurs par unité. En g/ml : valeurs pour 100.
+      const factor = qtyNum / (manualUnit === 'unité' ? 1 : 100)
       const cal = (parseFloat(manualCalories) || 0) * factor
       const prot = (parseFloat(manualProtein) || 0) * factor
       const carbs = (parseFloat(manualCarbs) || 0) * factor
@@ -455,6 +661,18 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
       })
 
       if (foodErr) throw foodErr
+
+      await saveToLibrary({
+        name: manualName.trim(),
+        barcode: null,
+        image_url: null,
+        unit: manualUnit,
+        cal: Math.round(parseFloat(manualCalories) || 0),
+        prot: Math.round((parseFloat(manualProtein) || 0) * 10) / 10,
+        carbs: Math.round((parseFloat(manualCarbs) || 0) * 10) / 10,
+        fat: Math.round((parseFloat(manualFat) || 0) * 10) / 10,
+      })
+
       onCreated()
     } catch (e) {
       setError(e.message)
@@ -463,6 +681,9 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
   }
 
   const macros = calculateMacros()
+  const filteredSaved = savedFoods.filter(f =>
+    f.name.toLowerCase().includes(savedQuery.trim().toLowerCase())
+  )
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -503,6 +724,16 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                 }}
               >
                 ✏️ Manuel
+              </button>
+              <button
+                style={{ ...s.tab, ...(activeTab === 'saved' ? s.tabActive : {}) }}
+                onClick={(e) => {
+                  setActiveTab('saved')
+                  fetchSavedFoods()
+                  e.currentTarget.blur()
+                }}
+              >
+                📚 Mes aliments
               </button>
             </div>
 
@@ -602,6 +833,10 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                   </div>
                 </div>
 
+                <p style={s.basisHint}>
+                  {manualUnit === 'unité' ? 'Valeurs saisies par unité' : `Valeurs saisies pour 100 ${manualUnit}`}
+                </p>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div style={s.formField}>
                     <label style={s.label}>Repas</label>
@@ -625,7 +860,7 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                         value={manualQuantity}
                         onChange={setManualQuantity}
                         step={manualUnit === 'unité' ? 1 : 10}
-                        placeholder="100"
+                        placeholder={manualUnit === 'unité' ? '1' : '100'}
                       />
                       <select
                         style={{ ...s.select, width: '90px' }}
@@ -647,6 +882,76 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                 >
                   {saving ? 'Ajout...' : 'Ajouter l\'aliment'}
                 </button>
+              </div>
+            )}
+
+            {activeTab === 'saved' && (
+              <div>
+                <input
+                  type="text"
+                  style={s.searchInput}
+                  placeholder="Filtrer mes aliments..."
+                  value={savedQuery}
+                  onChange={e => setSavedQuery(e.target.value)}
+                  autoFocus
+                />
+                {savedLoading ? (
+                  <div style={s.loading}>Chargement...</div>
+                ) : filteredSaved.length === 0 ? (
+                  <div style={s.loading}>
+                    {savedQuery
+                      ? 'Aucun aliment correspondant.'
+                      : 'Aucun aliment enregistré. Ajoute-en via Recherche, Code-barre ou Manuel : ils seront mémorisés ici.'}
+                  </div>
+                ) : (
+                  <div style={s.resultsList}>
+                    {filteredSaved.map(sf => {
+                      const basis = sf.quantity_unit === 'unité' ? 'Par unité' : `Pour 100 ${sf.quantity_unit}`
+                      return (
+                        <div
+                          key={sf.id}
+                          style={s.savedItem}
+                          onClick={() => selectSavedFood(sf)}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#1A1D19')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '#0D0F0E')}
+                        >
+                          {sf.image_url
+                            ? <img src={sf.image_url} alt={sf.name} style={s.savedImg} />
+                            : <div style={s.savedImgPh}>🍽️</div>}
+                          <div style={s.savedMain}>
+                            <div style={s.savedTop}>
+                              <span style={s.savedName}>{sf.name}</span>
+                              <span style={s.basisChip}>{basis}</span>
+                            </div>
+                            <div style={s.savedChips}>
+                              <span style={{ ...s.chip, color: '#A8FF3E', background: '#A8FF3E18' }}>{Math.round(sf.calories || 0)} kcal</span>
+                              <span style={{ ...s.chip, color: '#3EE0FF', background: '#3EE0FF18' }}>{(sf.protein_g || 0).toFixed(1)} g protéines</span>
+                              <span style={{ ...s.chip, color: '#FFD93E', background: '#FFD93E18' }}>{(sf.carbohydrates_g || 0).toFixed(1)} g glucides</span>
+                              <span style={{ ...s.chip, color: '#FF5757', background: '#FF575718' }}>{(sf.fat_g || 0).toFixed(1)} g lipides</span>
+                            </div>
+                          </div>
+                          <button
+                            style={s.savedDelete}
+                            title="Retirer de mes aliments"
+                            onClick={e => { e.stopPropagation(); deleteSavedFood(sf.id) }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = '#FF575718'
+                              e.currentTarget.style.borderColor = '#FF5757'
+                              e.currentTarget.style.color = '#FF5757'
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.background = '#1E2320'
+                              e.currentTarget.style.borderColor = '#2A2E28'
+                              e.currentTarget.style.color = '#8A8E88'
+                            }}
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -671,19 +976,19 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
                   <div style={{ background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ fontSize: '8px', color: '#6B7068', fontWeight: 600, marginBottom: '4px', letterSpacing: '0.05em' }}>Calories</div>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{Math.round(macros.cal)}</div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{Math.round(macros.cal)} kcal</div>
                   </div>
                   <div style={{ background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ fontSize: '8px', color: '#6B7068', fontWeight: 600, marginBottom: '4px', letterSpacing: '0.05em' }}>Protéines</div>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.prot.toFixed(1)}g</div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.prot.toFixed(1)} g</div>
                   </div>
                   <div style={{ background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ fontSize: '8px', color: '#6B7068', fontWeight: 600, marginBottom: '4px', letterSpacing: '0.05em' }}>Glucides</div>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.carbs.toFixed(1)}g</div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.carbs.toFixed(1)} g</div>
                   </div>
                   <div style={{ background: '#0D0F0E', border: '1px solid #252924', borderRadius: '6px', padding: '10px 8px', textAlign: 'center' }}>
                     <div style={{ fontSize: '8px', color: '#6B7068', fontWeight: 600, marginBottom: '4px', letterSpacing: '0.05em' }}>Lipides</div>
-                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.fat.toFixed(1)}g</div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#A8FF3E' }}>{macros.fat.toFixed(1)} g</div>
                   </div>
                 </div>
               </div>
@@ -712,7 +1017,7 @@ export default function CreateMealModal({ selectedDate, onClose, onCreated }) {
                     value={quantity}
                     onChange={setQuantity}
                     step={quantityUnit === 'unité' ? 1 : 10}
-                    placeholder="100"
+                    placeholder={quantityUnit === 'unité' ? '1' : '100'}
                   />
                   <select
                     style={{ ...s.select, width: '90px' }}

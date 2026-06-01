@@ -159,10 +159,10 @@ export default function Dashboard() {
 
   const hasAnyTarget = TARGET_KEYS.some(k => profile?.[k] != null && profile[k] > 0)
   const objStats = [
-    { key: 'calories', label: 'Calories', value: todayMacros.calories, target: profile?.target_calories,  unit: '',  color: '#A8FF3E' },
-    { key: 'protein',  label: 'Protéines', value: todayMacros.protein, target: profile?.target_protein_g, unit: 'g', color: '#3EE0FF' },
-    { key: 'carbs',    label: 'Glucides',  value: todayMacros.carbs,   target: profile?.target_carbs_g,   unit: 'g', color: '#FFD93E' },
-    { key: 'fat',      label: 'Lipides',   value: todayMacros.fat,     target: profile?.target_fat_g,     unit: 'g', color: '#FF8A5C' },
+    { key: 'calories', label: 'Calories', value: todayMacros.calories, target: profile?.target_calories,  unit: ' kcal',  color: '#A8FF3E' },
+    { key: 'protein',  label: 'Protéines', value: todayMacros.protein, target: profile?.target_protein_g, unit: ' g', color: '#3EE0FF' },
+    { key: 'carbs',    label: 'Glucides',  value: todayMacros.carbs,   target: profile?.target_carbs_g,   unit: ' g', color: '#FFD93E' },
+    { key: 'fat',      label: 'Lipides',   value: todayMacros.fat,     target: profile?.target_fat_g,     unit: ' g', color: '#FF8A5C' },
   ]
 
   // ─── rendu ────────────────────────────────────────────────────────────────
